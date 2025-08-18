@@ -1,785 +1,1107 @@
 <!DOCTYPE html>
-
 <html lang="zh-Hant">
-
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>健康日誌</title>
+  
+  <!-- PWA Manifest and Theme Color -->
+  <meta name="theme-color" content="#f8fafc"/>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="健康日誌">
+  <link rel="apple-touch-icon" href="https://placehold.co/192x192/3B82F6/FFFFFF?text=日誌">
 
-  <meta charset="UTF-8" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs/plugin/relativeTime.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs/plugin/customParseFormat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs/plugin/weekOfYear.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs/locale/zh-tw.js"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' };
+  </script>
+  <style>
+    :root { color-scheme: light; }
+    html.dark { color-scheme: dark; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .page { display: none; animation: fadeIn 0.3s ease-in-out; }
+    .page.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+    .nav-item {
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s ease-in-out;
+    }
+    .nav-item.active {
+        border-bottom-color: #3B82F6;
+    }
+    .nav-item.active svg, .nav-item.active .nav-text {
+        color: #3B82F6;
+    }
+    .nav-item.active .nav-text {
+        font-weight: 600;
+    }
 
-  <title>Uma健康日誌</title>
+    #toast-notification {
+      position: fixed; top: -100px; left: 50%;
+      transform: translateX(-50%);
+      transition: top 0.4s ease-in-out, opacity 0.4s ease-in-out;
+      opacity: 0;
+      z-index: 9999;
+    }
+    #toast-notification.show { top: 20px; opacity: 1; }
 
-  <meta name="theme-color" content="#f8fafc"/>
+    .bristol-item, .color-item { transition: all 0.2s ease-in-out; }
+    .bristol-item.bristol-selected {
+      border-color: #3B82F6; background-color: #EFF6FF; transform: scale(1.05);
+    }
+    .color-item.bristol-selected {
+       border-color: #3B82F6; background-color: #EFF6FF;
+    }
+    html.dark .bristol-item.bristol-selected {
+      background-color: #0b3a75; border-color: #60a5fa;
+    }
+     html.dark .color-item.bristol-selected {
+      background-color: #0b3a75; border-color: #60a5fa;
+    }
 
-  <script src="https://cdn.tailwindcss.com"></script>
+    .star-rating .star { color: #d1d5db; cursor: pointer; transition: color 0.2s; }
+    .star-rating .star:hover, .star-rating .star.selected { color: #f59e0b; }
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    .custom-checkbox:checked {
+      background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+      background-color: #3B82F6; border-color: #3B82F6;
+    }
+    .custom-checkbox:disabled { background-color: #e5e7eb; border-color: #d1d5db; }
+    html.dark .custom-checkbox:disabled { background-color: #4b5563; border-color: #6b7280; }
 
-  <script src="https://cdn.jsdelivr.net/npm/dayjs"></script>
+    .option-button-group .option-button { transition: all 0.2s ease-in-out; }
+    .option-button-group .option-button.selected { background-color: #3B82F6; color: white; border-color: #3B82F6; }
 
-  <script src="https://cdn.jsdelivr.net/npm/dayjs/plugin/relativeTime.js"></script>
+    .bowel-record-disabled { opacity: 0.5; pointer-events: none; }
+    .modal.hidden { display: none; }
 
-  <script src="https://cdn.jsdelivr.net/npm/dayjs/plugin/customParseFormat.js"></script>
+    .form-section { border-top-width: 1px; padding-top: 10px; margin-top: 10px; }
+    .form-section-label { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.9rem; }
+    .form-section-label svg { width: 16px; height: 16px; }
 
-  <script src="https://cdn.jsdelivr.net/npm/dayjs/locale/zh-tw.js"></script>
+    button:focus-visible, .option-button:focus-visible, .bristol-item:focus-visible, .color-item:focus-visible {
+      outline: 2px solid #3B82F6; outline-offset: 2px;
+    }
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-  <script>
-
-    tailwind.config = { darkMode: 'class' };
-
-  </script>
-
-  <style>
-
-    body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-
-    .page { display: none; animation: fadeIn 0.3s ease-in-out; }
-
-    .page.active { display: block; }
-
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
-
-    .nav-item { border-bottom: 3px solid transparent; transition: all 0.2s ease-in-out; }
-
-    .nav-item.active { border-bottom-color: #3B82F6; }
-
-    .nav-item.active svg, .nav-item.active .nav-text { color: #3B82F6; }
-
-    .nav-item.active .nav-text { font-weight: 600; }
-
-    #toast-notification { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); transition: top 0.4s, opacity 0.4s; opacity: 0; z-index: 9999; }
-
-    #toast-notification.show { top: 20px; opacity: 1; }
-
-    .bristol-item, .color-item { transition: all 0.2s; }
-
-    .bristol-item.bristol-selected, .color-item.bristol-selected { border-color: #3B82F6; background-color: #EFF6FF; }
-
-    html.dark .bristol-item.bristol-selected, html.dark .color-item.bristol-selected { background-color: #0b3a75; border-color: #60a5fa; }
-
-    .star-rating .star { color: #d1d5db; cursor: pointer; transition: color 0.2s; }
-
-    .star-rating .star:hover, .star-rating .star.selected { color: #f59e0b; }
-
-    .custom-checkbox:checked { background-color: #3B82F6; border-color: #3B82F6; }
-
-    .option-button-group .option-button.selected { background-color: #3B82F6; color: white; border-color: #3B82F6; }
-
-    .bowel-record-disabled { opacity: 0.5; pointer-events: none; }
-
-    #confirmation-modal.hidden { display: none; }
-
-    .form-section { border-top-width: 1px; padding-top: 10px; margin-top: 10px; }
-
-    .form-section-label { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.9rem; }
-
-    .form-section-label svg { width: 16px; height: 16px; }
-
-    button:focus-visible, .option-button:focus-visible, .bristol-item:focus-visible, .color-item:focus-visible { outline: 2px solid #3B82F6; outline-offset: 2px; }
-
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-    .spinner { animation: spin 1s linear infinite; }
-
-    #app-header-top { transition: max-height 0.3s, padding 0.3s, border 0.3s; max-height: 100px; overflow: hidden; }
-
-    .fullscreen-mode #app-header-top { max-height: 0; padding-top: 0; padding-bottom: 0; border-bottom-width: 0; }
-
-  </style>
-
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .spinner { animation: spin 1s linear infinite; }
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .status-badge-green { background-color: #D1FAE5; color: #065F46; }
+    .status-badge-orange { background-color: #FFEDD5; color: #9A3412; }
+    .status-badge-blue { background-color: #DBEAFE; color: #1E40AF; }
+  </style>
 </head>
-
 <body class="bg-slate-100 dark:bg-slate-950 transition-colors duration-300">
-
-<div id="app" class="max-w-lg mx-auto bg-slate-50 dark:bg-slate-900 min-h-screen shadow-lg relative transition-colors duration-300 overflow-x-hidden">
-
-  <header id="app-header" class="bg-white/80 dark:bg-slate-800/80 sticky top-0 z-10 shadow-sm transition-colors">
-
-    <div id="app-header-top" class="text-slate-800 dark:text-slate-200 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-
-      <button id="fullscreen-toggle" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" aria-label="切換全螢幕">
-
-        <svg id="icon-maximize" xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-
-        <svg id="icon-minimize" xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="hidden"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
-
-      </button>
-
-      <h1 id="header-title" class="text-xl font-bold tracking-wide text-center">Uma健康日誌</h1>
-
-      <button id="theme-toggle" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" aria-label="切換主題">
-
-        <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="hidden"><circle cx="12" cy="12" r="5"></circle></svg>
-
-        <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="hidden"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-
-      </button>
-
-    </div>
-
-    <nav id="app-nav" class="border-b border-slate-200 dark:border-slate-700 flex justify-around">
-
-      <button class="nav-item flex flex-col items-center justify-center w-full text-slate-500 dark:text-slate-400 py-2" data-page="log-page"><span class="nav-text text-xs mt-1">日誌</span></button>
-
-      <button class="nav-item flex flex-col items-center justify-center w-full text-slate-500 dark:text-slate-400 py-2" data-page="stats-page"><span class="nav-text text-xs mt-1">統計</span></button>
-
-      <button class="nav-item flex flex-col items-center justify-center w-full text-slate-500 dark:text-slate-400 py-2" data-page="history-page"><span class="nav-text text-xs mt-1">歷史</span></button>
-
-    </nav>
-
-  </header>
-
-  <div id="toast-notification" class="px-6 py-3 rounded-full font-semibold text-white shadow-lg"></div>
-
-  <main class="p-4">
-
-    <!-- 日誌頁 -->
-
-    <div id="log-page" class="page active">
-
-      <div class="space-y-6">
-
-        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm">
-
-          <label for="log-date" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">紀錄日期</label>
-
-          <input type="date" id="log-date" class="w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-md"/>
-
-        </section>
-
-        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4">
-
-          <h2 class="text-lg font-semibold">排便紀錄</h2>
-
-          <label class="flex items-center select-none">
-
-            <input type="checkbox" id="no-bowel-today" class="h-4 w-4 rounded border-gray-300 text-blue-600 custom-checkbox mr-2"/>
-
-            今天無排便
-
-          </label>
-
-          <div id="bowel-records-container" class="space-y-5"></div>
-
-          <button id="add-bowel-record-btn" class="w-full mt-2 text-blue-600 font-semibold py-2 px-4 rounded-lg border-2 border-dashed border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/50 transition flex items-center justify-center">新增一筆排便紀錄</button>
-
-        </section>
-
-        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm">
-
-          <h3 class="text-base font-semibold mb-2">昨晚睡眠品質</h3>
-
-          <div id="sleep-quality-rating" class="star-rating flex items-center justify-center space-x-2 text-4xl"></div>
-
-        </section>
-
-        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm">
-
-          <h3 class="text-base font-semibold mb-2">RBD 症狀 (昨晚)</h3>
-
-          <div id="rbd-symptoms" class="space-y-2"></div>
-
-          <textarea id="rbd-other-notes" rows="2" class="w-full mt-2 p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-md hidden" placeholder="請描述其他症狀"></textarea>
-
-        </section>
-
-        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm">
-
-          <h3 class="text-base font-semibold mb-2">用藥紀錄</h3>
-
-          <textarea id="medication-log" rows="3" class="w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-md" placeholder="請記錄您今天服用的藥物、時間和劑量。"></textarea>
-
-        </section>
-
-        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm">
-
-          <h3 class="text-base font-semibold mb-2">每日備註</h3>
-
-          <textarea id="daily-notes" rows="3" class="w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-md" placeholder="記錄任何其他想記下的事情..."></textarea>
-
-        </section>
-
-        <button id="save-log-button" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center text-lg">
-
-          <span id="save-log-button-content">儲存本日完整日誌</span>
-
-        </button>
-
-      </div>
-
-    </div>
-
-    <!-- 統計頁 -->
-
-    <div id="stats-page" class="page space-y-6">
-
-      <div class="flex justify-between items-center bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm">
-
-        <button id="prev-week-btn" class="px-3 py-2 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200">&lt; 上一週</button>
-
-        <h2 id="stats-week-title" class="text-lg font-semibold text-slate-800 dark:text-slate-200">本週統計</h2>
-
-        <button id="next-week-btn" class="px-3 py-2 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200" disabled>下一週 &gt;</button>
-
-      </div>
-
-      <section id="ai-insight-section" class="bg-blue-50 dark:bg-blue-900/50 border-l-4 border-blue-500 p-4 rounded-r-lg shadow-sm space-y-2 text-blue-800 dark:text-blue-200">
-
-        <h3 class="text-lg font-semibold">本週洞察</h3>
-
-        <p id="ai-insight-text" class="text-sm"></p>
-
-      </section>
-
-      <section id="bowel-analysis-section" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4"></section>
-
-      <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4">
-
-        <h3 class="text-lg font-semibold">昨晚睡眠品質趨勢</h3>
-
-        <div class="relative h-64 md:h-80"><canvas id="sleep-chart"></canvas></div>
-
-        <div id="stats-summary-sleep" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
-
-      </section>
-
-      <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4">
-
-        <h3 class="text-lg font-semibold">排便時間點分佈</h3>
-
-        <div class="relative h-64 md:h-80"><canvas id="bowel-time-chart"></canvas></div>
-
-      </section>
-
-      <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4">
-
-        <h3 class="text-lg font-semibold">排便類型趨勢</h3>
-
-        <div class="relative h-64 md:h-80"><canvas id="bowel-chart"></canvas></div>
-
-        <div id="stats-summary-bowel" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
-
-      </section>
-
-      <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4">
-
-        <h3 class="text-lg font-semibold">RBD 症狀統計</h3>
-
-        <div class="relative h-64 md:h-80"><canvas id="rbd-chart"></canvas></div>
-
-        <div id="stats-summary-rbd" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
-
-      </section>
-
-      <section id="health-tips-section" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-3"></section>
-
-      <div class="flex gap-3 justify-end mt-6">
-
-        <button id="export-week-pdf-btn" class="bg-blue-600 text-white px-4 py-2 rounded">匯出本週PDF</button>
-
-        <button id="export-month-pdf-btn" class="bg-green-600 text-white px-4 py-2 rounded">匯出本月PDF</button>
-
-      </div>
-
-    </div>
-
-    <!-- 歷史頁 -->
-
-    <div id="history-page" class="page">
-
-      <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm">
-
-        <h2 class="text-lg font-semibold mb-4">資料管理</h2>
-
-        <div class="grid grid-cols-2 gap-2 mb-4">
-
-          <button id="export-csv-btn" class="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg">匯出CSV</button>
-
-          <button id="import-csv-btn" class="w-full bg-sky-500 text-white font-semibold py-2 px-4 rounded-lg">匯入CSV</button>
-
-        </div>
-
-        <input type="file" id="import-file-input" class="hidden" accept=".csv, text/csv"/>
-
-        <h2 class="text-lg font-semibold mb-4 mt-6">所有日誌紀錄</h2>
-
-        <div id="history-list" class="space-y-3"></div>
-
-      </section>
-
-    </div>
-
-  </main>
-
-  <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
-
-    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 max-w-sm w-full">
-
-      <h3 id="modal-title" class="text-lg font-bold text-slate-800 dark:text-slate-200 mb-2">確認操作</h3>
-
-      <p id="modal-message" class="text-sm text-slate-600 dark:text-slate-400 mb-6">您確定要執行此操作嗎？</p>
-
-      <div class="flex justify-end space-x-3">
-
-        <button id="modal-cancel-btn" class="px-4 py-2 bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-md">取消</button>
-
-        <button id="modal-confirm-btn" class="px-4 py-2 bg-red-500 text-white rounded-md">確定</button>
-
-      </div>
-
-    </div>
-
-  </div>
-
-</div>
-
-<script>
-
-/* --- dayjs初始化 --- */
-
-dayjs.extend(dayjs_plugin_relativeTime);
-
-dayjs.extend(dayjs_plugin_customParseFormat);
-
-dayjs.locale('zh-tw');
-
-
-
-/* --- 資料結構與初始狀態 --- */
-
-let appState = {
-
-  dailyLogs: {},
-
-  currentDate: dayjs().format('YYYY-MM-DD'),
-
-  currentPage: 'log-page',
-
-  charts: { bowel: null, rbd: null, bowelTime: null, sleep: null },
-
-  statsWeekOffset: 0,
-
-  isFullscreen: false,
-
-};
-
-
-
-/* --- DOM物件 --- */
-
-const DOM = {
-
-  app: document.getElementById('app'),
-
-  appHeaderTop: document.getElementById('app-header-top'),
-
-  appNav: document.getElementById('app-nav'),
-
-  html: document.documentElement,
-
-  headerTitle: document.getElementById('header-title'),
-
-  pages: document.querySelectorAll('.page'),
-
-  navItems: document.querySelectorAll('.nav-item'),
-
-  toast: document.getElementById('toast-notification'),
-
-  logDate: document.getElementById('log-date'),
-
-  noBowelToday: document.getElementById('no-bowel-today'),
-
-  bowelRecordsContainer: document.getElementById('bowel-records-container'),
-
-  addBowelRecordBtn: document.getElementById('add-bowel-record-btn'),
-
-  sleepQualityRating: document.getElementById('sleep-quality-rating'),
-
-  rbdSymptoms: document.getElementById('rbd-symptoms'),
-
-  rbdOtherNotes: document.getElementById('rbd-other-notes'),
-
-  medicationLog: document.getElementById('medication-log'),
-
-  dailyNotes: document.getElementById('daily-notes'),
-
-  saveLogButton: document.getElementById('save-log-button'),
-
-  saveLogButtonContent: document.getElementById('save-log-button-content'),
-
-  statsPage: document.getElementById('stats-page'),
-
-  aiInsightText: document.getElementById('ai-insight-text'),
-
-  historyList: document.getElementById('history-list'),
-
-  statsWeekTitle: document.getElementById('stats-week-title'),
-
-  prevWeekBtn: document.getElementById('prev-week-btn'),
-
-  nextWeekBtn: document.getElementById('next-week-btn'),
-
-  bowelAnalysisSection: document.getElementById('bowel-analysis-section'),
-
-  sleepChartCanvas: document.getElementById('sleep-chart'),
-
-  bowelTimeChartCanvas: document.getElementById('bowel-time-chart'),
-
-  bowelChartCanvas: document.getElementById('bowel-chart'),
-
-  rbdChartCanvas: document.getElementById('rbd-chart'),
-
-  statsSummarySleep: document.getElementById('stats-summary-sleep'),
-
-  statsSummaryBowel: document.getElementById('stats-summary-bowel'),
-
-  statsSummaryRbd: document.getElementById('stats-summary-rbd'),
-
-  healthTipsSection: document.getElementById('health-tips-section'),
-
-  exportCsvBtn: document.getElementById('export-csv-btn'),
-
-  importCsvBtn: document.getElementById('import-csv-btn'),
-
-  importFileInput: document.getElementById('import-file-input'),
-
-  confirmationModal: document.getElementById('confirmation-modal'),
-
-  modalTitle: document.getElementById('modal-title'),
-
-  modalMessage: document.getElementById('modal-message'),
-
-  modalCancelBtn: document.getElementById('modal-cancel-btn'),
-
-  modalConfirmBtn: document.getElementById('modal-confirm-btn'),
-
-  themeToggle: document.getElementById('theme-toggle'),
-
-  themeIconSun: document.getElementById('theme-icon-sun'),
-
-  themeIconMoon: document.getElementById('theme-icon-moon'),
-
-  fullscreenToggle: document.getElementById('fullscreen-toggle'),
-
-  iconMaximize: document.getElementById('icon-maximize'),
-
-  iconMinimize: document.getElementById('icon-minimize'),
-
-  exportWeekPdfBtn: document.getElementById('export-week-pdf-btn'),
-
-  exportMonthPdfBtn: document.getElementById('export-month-pdf-btn'),
-
-};
-
-
-
-/* --- 其他常數資料（略） --- */
-
-// Bristol、顏色、症狀等資料，請依你的原始程式碼填入
-
-
-
-/* --- 初始化 --- */
-
-function init() {
-
-  setupPWA();
-
-  setupTheme();
-
-  loadData();
-
-  renderStaticComponents();
-
-  setupEventListeners();
-
-  setupGestureListeners();
-
-  DOM.logDate.value = appState.currentDate;
-
-  loadLogForDate(appState.currentDate);
-
-  navigateTo('log-page');
-
-}
-
-
-
-/* --- PDF匯出 --- */
-
-function getWeekData(weekStart) {
-
-  const data = { dates: [], logs: [], sleep: [], bowelCount: [], rbdCount: [], bowelTypes: [] };
-
-  for (let i = 0; i < 7; i++) {
-
-    const date = weekStart.add(i, 'day');
-
-    const dateStr = date.format('YYYY-MM-DD');
-
-    const log = appState.dailyLogs[dateStr];
-
-    data.dates.push(dateStr);
-
-    if (log) {
-
-      data.logs.push(log);
-
-      data.sleep.push(log.sleep || 0);
-
-      data.bowelCount.push(log.bowel ? log.bowel.length : 0);
-
-      data.bowelTypes.push(log.bowel ? log.bowel.flatMap(b => b.types) : []);
-
-      data.rbdCount.push(log.rbd && log.rbd.symptoms && !log.rbd.symptoms.includes('none') ? log.rbd.symptoms.length : 0);
-
-    } else {
-
-      data.logs.push(null);
-
-      data.sleep.push(0);
-
-      data.bowelCount.push(0);
-
-      data.bowelTypes.push([]);
-
-      data.rbdCount.push(0);
-
-    }
-
-  }
-
-  // 統計
-
-  const validSleep = data.sleep.filter(s => s > 0);
-
-  data.avgSleep = validSleep.length ? (validSleep.reduce((a,b)=>a+b,0)/validSleep.length).toFixed(1) : 0;
-
-  data.totalBowel = data.bowelCount.reduce((a,b)=>a+b,0);
-
-  data.avgBMs = (data.totalBowel/7).toFixed(1);
-
-  data.allTypes = data.bowelTypes.flat().filter(b=>!!b);
-
-  data.avgType = data.allTypes.length ? (data.allTypes.reduce((a,b)=>a+b,0)/data.allTypes.length).toFixed(1) : 0;
-
-  data.totalRbd = data.rbdCount.reduce((a,b)=>a+b,0);
-
-  return data;
-
-}
-
-function getMonthData(monthStart) {
-
-  const data = { dates: [], logs: [], sleep: [], bowelCount: [], rbdCount: [], bowelTypes: [] };
-
-  const days = monthStart.daysInMonth();
-
-  for (let i = 0; i < days; i++) {
-
-    const date = monthStart.add(i, 'day');
-
-    const dateStr = date.format('YYYY-MM-DD');
-
-    const log = appState.dailyLogs[dateStr];
-
-    data.dates.push(dateStr);
-
-    if (log) {
-
-      data.logs.push(log);
-
-      data.sleep.push(log.sleep || 0);
-
-      data.bowelCount.push(log.bowel ? log.bowel.length : 0);
-
-      data.bowelTypes.push(log.bowel ? log.bowel.flatMap(b => b.types) : []);
-
-      data.rbdCount.push(log.rbd && log.rbd.symptoms && !log.rbd.symptoms.includes('none') ? log.rbd.symptoms.length : 0);
-
-    } else {
-
-      data.logs.push(null);
-
-      data.sleep.push(0);
-
-      data.bowelCount.push(0);
-
-      data.bowelTypes.push([]);
-
-      data.rbdCount.push(0);
-
-    }
-
-  }
-
-  const validSleep = data.sleep.filter(s => s > 0);
-
-  data.avgSleep = validSleep.length ? (validSleep.reduce((a,b)=>a+b,0)/validSleep.length).toFixed(1) : 0;
-
-  data.totalBowel = data.bowelCount.reduce((a,b)=>a+b,0);
-
-  data.avgBMs = (data.totalBowel/days).toFixed(1);
-
-  data.allTypes = data.bowelTypes.flat().filter(b=>!!b);
-
-  data.avgType = data.allTypes.length ? (data.allTypes.reduce((a,b)=>a+b,0)/data.allTypes.length).toFixed(1) : 0;
-
-  data.totalRbd = data.rbdCount.reduce((a,b)=>a+b,0);
-
-  return data;
-
-}
-
-function exportPDF(type = "week") {
-
-  const { jsPDF } = window.jspdf;
-
-  const doc = new jsPDF({ format: "a4" }); // A4尺寸
-
-
-
-  let y = 15;
-
-  doc.setFont("helvetica", "bold");
-
-  doc.setFontSize(18);
-
-
-
-  let title, data, dateRange;
-
-  if (type === "week") {
-
-    const weekStart = dayjs().subtract(appState.statsWeekOffset, 'week').startOf('week');
-
-    const weekEnd = dayjs().subtract(appState.statsWeekOffset, 'week').endOf('week');
-
-    title = `健康日誌週報表`;
-
-    dateRange = `${weekStart.format('YYYY/MM/DD')} - ${weekEnd.format('YYYY/MM/DD')}`;
-
-    data = getWeekData(weekStart);
-
-  } else {
-
-    const monthStart = dayjs().startOf('month');
-
-    const monthEnd = dayjs().endOf('month');
-
-    title = `健康日誌月報表`;
-
-    dateRange = `${monthStart.format('YYYY/MM/DD')} - ${monthEnd.format('YYYY/MM/DD')}`;
-
-    data = getMonthData(monthStart);
-
-  }
-
-  doc.text(title, 15, y); y += 10;
-
-  doc.setFontSize(13);
-
-  doc.setFont("helvetica", "normal");
-
-  doc.text(`統計區間：${dateRange}`, 15, y); y += 10;
-
-  doc.setLineWidth(0.5);
-
-  doc.line(15, y, 195, y); y += 5;
-
-
-
-  doc.setFontSize(12);
-
-  doc.text(`平均睡眠品質：${data.avgSleep} 顆星`, 15, y); y += 8;
-
-  doc.text(`平均排便次數：${data.avgBMs} 次/天`, 15, y); y += 8;
-
-  doc.text(`平均排便類型：${data.avgType} 型`, 15, y); y += 8;
-
-  doc.text(`RBD症狀出現次數：${data.totalRbd} 次`, 15, y); y += 10;
-
-  doc.setLineWidth(0.3);
-
-  doc.line(15, y, 195, y); y += 8;
-
-
-
-  doc.setFontSize(12);
-
-  data.dates.forEach((dateStr, idx) => {
-
-    const log = data.logs[idx];
-
-    if (!log) return;
-
-    if (y > 270) { doc.addPage(); y = 15; }
-
-    doc.setFont("helvetica", "bold");
-
-    doc.text(`${dayjs(dateStr).format("YYYY/MM/DD")}`, 15, y); y += 7;
-
-    doc.setFont("helvetica", "normal");
-
-    doc.text(`睡眠品質: ${log.sleep || '未記錄'} 顆星`, 20, y); y += 7;
-
-    if (log.noBowel) {
-
-      doc.text(`排便: 無`, 20, y); y += 7;
-
-    } else if (log.bowel && log.bowel.length > 0) {
-
-      log.bowel.forEach((b, bIdx) => {
-
-        doc.text(`排便${bIdx+1}: 時間${b.bowelTimeOfDay || '未記錄'}, 類型${b.types.join('/') || '-'}, 顏色${b.color || '-'}`, 23, y); y += 7;
-
-        doc.text(`症狀: ${b.symptoms.join('/') || '-'}, 附加狀態: ${b.additionalStatus.join('/') || '-'}`, 23, y); y += 7;
-
-        if (b.notes) { doc.text(`備註: ${b.notes}`, 23, y); y += 7; }
-
-      });
-
-    }
-
-    let rbd = log.rbd && log.rbd.symptoms ? log.rbd.symptoms.join('/') : '';
-
-    doc.text(`RBD症狀: ${rbd || '無'}${log.rbd && log.rbd.other ? '，其他：'+log.rbd.other : ''}`, 20, y); y += 7;
-
-    doc.text(`用藥紀錄: ${log.meds || '無'}`, 20, y); y += 7;
-
-    doc.text(`每日備註: ${log.dailyNotes || '無'}`, 20, y); y += 9;
-
-    doc.setLineWidth(0.1);
-
-    doc.line(15, y, 195, y); y += 6;
-
-  });
-
-
-
-  doc.save(`${title}_${dayjs().format('YYYYMMDD')}.pdf`);
-
-}
-
-
-
-/* --- 匯出PDF按鈕綁定 --- */
-
-DOM.exportWeekPdfBtn.onclick = () => exportPDF("week");
-
-DOM.exportMonthPdfBtn.onclick = () => exportPDF("month");
-
-
-
-/* --- 其他功能請補充你的原程式碼 --- */
-
-init();
-
-</script>
-
+  <div id="app" class="max-w-lg mx-auto bg-slate-50 dark:bg-slate-900 min-h-screen shadow-lg relative transition-colors duration-300 overflow-x-hidden">
+    <header id="app-header" class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm sticky top-0 z-10 shadow-sm transition-colors duration-300">
+      <div id="app-header-top" class="text-slate-800 dark:text-slate-200 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+        <div class="w-10 h-10"></div> <!-- Placeholder for alignment -->
+        <h1 id="header-title" class="text-xl font-bold tracking-wide text-center">健康日誌</h1>
+        <button id="theme-toggle" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" aria-label="切換主題">
+          <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+      </div>
+      <nav id="app-nav" class="border-b border-slate-200 dark:border-slate-700 flex justify-around">
+        <button class="nav-item flex flex-col items-center justify-center w-full text-slate-500 dark:text-slate-400 py-2" data-page="log-page" aria-label="前往日誌">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          <span class="nav-text text-xs mt-1">日誌</span>
+        </button>
+        <button class="nav-item flex flex-col items-center justify-center w-full text-slate-500 dark:text-slate-400 py-2" data-page="stats-page" aria-label="前往統計">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path></svg>
+          <span class="nav-text text-xs mt-1">統計</span>
+        </button>
+        <button class="nav-item flex flex-col items-center justify-center w-full text-slate-500 dark:text-slate-400 py-2" data-page="history-page" aria-label="前往歷史">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <span class="nav-text text-xs mt-1">歷史</span>
+        </button>
+      </nav>
+    </header>
+
+    <div id="toast-notification" class="px-6 py-3 rounded-full font-semibold text-white shadow-lg"></div>
+
+    <main class="p-4">
+      <!-- ========= 日誌頁面 ========= -->
+      <div id="log-page" class="page active">
+        <div class="space-y-6">
+          <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm">
+            <label for="log-date" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">🗓️ 紀錄日期</label>
+            <input type="date" id="log-date" class="w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 rounded-md focus:ring-2 focus:ring-blue-500"/>
+          </section>
+
+          <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
+            <h2 class="text-lg font-semibold">💩 排便紀錄</h2>
+            <label class="flex items-center select-none">
+              <input type="checkbox" id="no-bowel-today" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 custom-checkbox mr-2"/>
+              今天無排便
+            </label>
+            <div id="bowel-records-container" class="space-y-5"></div>
+            <button id="add-bowel-record-btn" class="w-full mt-2 text-blue-600 font-semibold py-2 px-4 rounded-lg border-2 border-dashed border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/50 transition flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              新增一筆排便紀錄
+            </button>
+          </section>
+
+          <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm text-slate-800 dark:text-slate-200">
+            <h3 class="text-base font-semibold mb-2">😴 昨晚睡眠品質</h3>
+            <div id="sleep-quality-rating" class="star-rating flex items-center justify-center space-x-2 text-4xl"></div>
+          </section>
+
+          <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm text-slate-800 dark:text-slate-200">
+            <h3 class="text-base font-semibold mb-2">🚽 昨晚起床如廁次數</h3>
+            <div id="night-toilet-visits" class="option-button-group flex flex-wrap gap-2 justify-center">
+              <!-- Buttons 0-5 will be generated by JS -->
+            </div>
+          </section>
+
+          <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm text-slate-800 dark:text-slate-200">
+            <h3 class="text-base font-semibold mb-2">🏃‍♂️ RBD 症狀 (昨晚)</h3>
+            <div id="rbd-symptoms" class="space-y-2"></div>
+            <textarea id="rbd-other-notes" rows="2" class="w-full mt-2 p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-md hidden" placeholder="請描述其他症狀"></textarea>
+          </section>
+
+          <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm text-slate-800 dark:text-slate-200">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-base font-semibold">💊 用藥紀錄</h3>
+                <button id="clear-meds-btn" class="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">清除</button>
+            </div>
+            <textarea id="medication-log" rows="3" class="w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-md" placeholder="請記錄您今天服用的藥物、時間和劑量。"></textarea>
+            <div id="common-meds-container" class="flex flex-wrap gap-2 mt-2"></div>
+          </section>
+
+          <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm text-slate-800 dark:text-slate-200">
+            <h3 class="text-base font-semibold mb-2">📝 每日備註</h3>
+            <textarea id="daily-notes" rows="3" class="w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-md" placeholder="記錄任何其他想記下的事情..."></textarea>
+          </section>
+
+          <button id="save-log-button" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-transform transform active:scale-95 flex items-center justify-center text-lg">
+            <span id="save-log-button-content">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="mr-2 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+              儲存本日完整日誌
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ========= 統計頁 ========= -->
+      <div id="stats-page" class="page space-y-6">
+        <div class="flex justify-between items-center bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm">
+          <button id="prev-week-btn" class="px-3 py-2 rounded-md bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 transition-colors">&lt; 上一週</button>
+          <h2 id="stats-week-title" class="text-lg font-semibold text-slate-800 dark:text-slate-200 text-center">本週統計</h2>
+          <button id="next-week-btn" class="px-3 py-2 rounded-md bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>下一週 &gt;</button>
+        </div>
+
+        <section id="ai-insight-section" class="bg-blue-50 dark:bg-blue-900/50 border-l-4 border-blue-500 p-4 rounded-r-lg shadow-sm space-y-2 text-blue-800 dark:text-blue-200">
+          <h3 class="text-lg font-semibold flex items-center">✨ 本週洞察</h3>
+          <div id="ai-insight-text" class="text-sm"></div>
+        </section>
+
+        <section id="bowel-analysis-section" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200"></section>
+        
+        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
+          <h3 class="text-lg font-semibold">😴 睡眠品質趨勢</h3>
+          <div class="relative h-64 md:h-80"><canvas id="sleep-chart"></canvas></div>
+          <div id="stats-summary-sleep" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
+        </section>
+        
+        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
+          <h3 class="text-lg font-semibold">🚽 夜間起床如廁次數趨勢</h3>
+          <div class="relative h-64 md:h-80"><canvas id="night-toilet-chart"></canvas></div>
+          <div id="stats-summary-night-toilet" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
+        </section>
+        
+        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
+          <h3 class="text-lg font-semibold">⏰ 排便時間點分佈</h3>
+          <div class="relative h-64 md:h-80"><canvas id="bowel-time-chart"></canvas></div>
+        </section>
+        
+        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
+          <h3 class="text-lg font-semibold">💩 排便類型趨勢</h3>
+          <div class="relative h-64 md:h-80"><canvas id="bowel-chart"></canvas></div>
+          <div id="stats-summary-bowel" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
+        </section>
+        
+        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
+          <h3 class="text-lg font-semibold">🏃‍♂️ RBD 症狀統計</h3>
+          <div class="relative h-64 md:h-80"><canvas id="rbd-chart"></canvas></div>
+          <div id="stats-summary-rbd" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
+        </section>
+        
+        <section id="health-tips-section" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-3 text-slate-800 dark:text-slate-200"></section>
+      </div>
+
+      <!-- ========= 歷史頁 ========= -->
+      <div id="history-page" class="page">
+        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm text-slate-800 dark:text-slate-200">
+          <h2 class="text-lg font-semibold mb-4">🗂️ 資料管理</h2>
+          <p id="last-backup-info" class="text-xs text-center text-slate-500 dark:text-slate-400 mb-4"></p>
+          <div class="space-y-2 mb-4">
+            <button id="manage-meds-btn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
+              管理常用藥物
+            </button>
+            <div class="grid grid-cols-2 gap-2">
+                <button id="import-csv-btn" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    匯入 CSV
+                </button>
+                <button id="export-csv-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    匯出為 CSV
+                </button>
+            </div>
+          </div>
+          <input type="file" id="import-file-input" class="hidden" accept=".csv, text/csv"/>
+          <div class="flex justify-between items-center mb-4 mt-6">
+            <h2 class="text-lg font-semibold">📜 所有日誌紀錄</h2>
+            <select id="week-filter" class="text-sm p-1 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-md"></select>
+          </div>
+          <div id="history-list" class="space-y-3"></div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Modals -->
+    <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 max-w-sm w-full">
+        <h3 id="modal-title" class="text-lg font-bold text-slate-800 dark:text-slate-200 mb-2"></h3>
+        <p id="modal-message" class="text-sm text-slate-600 dark:text-slate-400 mb-6"></p>
+        <div class="flex justify-end space-x-3">
+          <button id="modal-cancel-btn" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 rounded-md">取消</button>
+          <button id="modal-confirm-btn" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md">確定</button>
+        </div>
+      </div>
+    </div>
+    
+    <div id="color-info-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 max-w-sm w-full">
+        <div class="flex justify-between items-center mb-2">
+            <h3 id="color-modal-title" class="text-lg font-bold text-slate-800 dark:text-slate-200"></h3>
+            <button id="color-modal-close-btn" class="text-slate-400 hover:text-slate-600">&times;</button>
+        </div>
+        <p id="color-modal-message" class="text-sm text-slate-600 dark:text-slate-400 mb-6"></p>
+        <div class="flex justify-end">
+          <button id="color-modal-ok-btn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md">我知道了</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="meds-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 max-w-sm w-full">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-200">管理常用藥物</h3>
+            <button id="meds-modal-close-btn" class="text-slate-400 hover:text-slate-600">&times;</button>
+        </div>
+        <div class="flex gap-2 mb-4">
+            <input type="text" id="new-med-input" class="flex-grow p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-md" placeholder="輸入藥物名稱">
+            <button id="add-med-btn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md">新增</button>
+        </div>
+        <div id="meds-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    dayjs.extend(dayjs_plugin_relativeTime);
+    dayjs.extend(dayjs_plugin_customParseFormat);
+    dayjs.extend(dayjs_plugin_weekOfYear);
+    dayjs.locale('zh-tw');
+
+    function cleanInvisible(str) {
+      if (str === null || str === undefined) return '';
+      return String(str).replace(/\uFEFF/g, '').replace(/\r/g, '').replace(/\u200B/g, '').trim();
+    }
+    
+    function triggerHapticFeedback(ms = 50) {
+        if (navigator.vibrate) {
+            navigator.vibrate(ms);
+        }
+    }
+
+    const bristolData = [
+      { type: 1, d: "一顆顆分開的堅果型", svg: `<g fill="#754C24"><circle cx="8" cy="11" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="16" cy="11" r="2"/><circle cx="10" cy="7" r="2"/><circle cx="14" cy="7" r="2"/><path d="M9 11.5 a1 .5 0 0 0 2 0 a1 .5 0 0 0-2 0 M15 11.5 a1 .5 0 0 0 2 0 a1 .5 0 0 0-2 0 M11 7.5 a1 .5 0 0 0 2 0 a1 .5 0 0 0-2 0"/></g>`},
+      { type: 2, d: "表面凹凸的香腸型", svg: `<g fill="#8C5A3C"><path d="M6 13 C 6 9, 18 9, 18 13 S 17 15, 12 15 S 6 17, 6 13 Z"/><circle cx="8" cy="11" r="1.5"/><circle cx="11" cy="10.5" r="1.5"/><circle cx="14" cy="11" r="1.5"/><circle cx="16" cy="12.5" r="1.5"/><path d="M11 13.5 a1 .5 0 0 0 2 0 a1 .5 0 0 0-2 0"/></g>`},
+      { type: 3, d: "表面有裂痕的香腸型", svg: `<g fill="#A66D4A" stroke="#8C5A3C" stroke-width="0.5"><path d="M5 12 C 5 9, 19 9, 19 12 S 18 14, 12 14 S 5 15, 5 12 Z"/><path d="M8 10 l 1 3 M12 10 l 1 3 M16 10 l 1 3"/><path d="M11 12.5 a1 .5 0 0 0 2 0 a1 .5 0 0 0-2 0"/></g>`},
+      { type: 4, d: "光滑且柔軟的香腸/蛇型", svg: `<g fill="#C07E56"><path d="M5 12 C 5 9, 19 9, 19 12 S 18 14, 12 14 S 5 15, 5 12 Z"/><path d="M11 12.5 a1 .5 0 0 1 2 0 a1 .5 0 0 1-2 0"/></g>`},
+      { type: 5, d: "斷面光滑的柔軟塊狀", svg: `<g fill="#D98F61"><circle cx="8" cy="12" r="3"/><circle cx="13" cy="13" r="3"/><circle cx="17" cy="11" r="3"/><path d="M7.5 12.5 a1 .5 0 0 1 2 0 a1 .5 0 0 1-2 0 M12.5 13.5 a1 .5 0 0 1 2 0 a1 .5 0 0 1-2 0"/></g>`},
+      { type: 6, d: "鬆軟、邊緣破碎的糊狀", svg: `<g fill="#E6A06D"><path d="M6 12 C 6 8, 10 7, 12 9 C 14 11, 18 10, 18 12 S 14 15, 12 14 C 10 13, 6 16, 6 12 Z"/><path d="M11 12.5 a1 .5 0 0 0 2 0 a1 .5 0 0 0-2 0"/></g>`},
+      { type: 7, d: "沒有固體、完全呈液體狀", svg: `<g fill="#F2B178"><path d="M5 13 C 5 10, 19 10, 19 13 S 15 16, 12 15 S 5 16, 5 13 Z"/><path d="M11 13.5 a1 .5 0 0 0 2 0 a1 .5 0 0 0-2 0"/></g>`}
+    ];
+    const bowelColorData = [
+      { name: '啡色', colorHex: '#7B4F34', infoTitle: '✅ 健康、正常', infoText: '恭喜！這是最健康的顏色，表示膽汁分泌正常，消化系統運作良好。' }, 
+      { name: '黃色', colorHex: '#DAA520', infoTitle: '✅ 健康、正常', infoText: '這也是健康的顏色，可能與飲食中脂肪含量較高有關，通常無需擔心。' },
+      { name: '綠色', colorHex: '#5A6335', infoTitle: '💡 通常正常', infoText: '別擔心，通常是吃了較多深綠色蔬菜，或是食物消化速度較快，膽汁來不及分解所致。' }, 
+      { name: '紅色', colorHex: '#9E2B25', infoTitle: '⚠️ 請留意', infoText: '可能是食物（如火龍果、甜菜根）造成的，但也可能是下消化道出血的警訊，需持續觀察。' },
+      { name: '黑色', colorHex: '#1E1E1E', infoTitle: '⚠️ 要注意', infoText: '可能是吃了鐵劑、含墨魚汁的食物，但也可能是上消化道出血的徵兆，建議提高警覺。' }, 
+      { name: '灰白色', colorHex: '#A9A9A9', infoTitle: '🚨 需要警覺', infoText: '這可能代表膽汁分泌不足或膽管阻塞，是較危險的信號，建議諮詢醫師。' }
+    ];
+    const bowelVolumes = ['少量', '中等', '大量'];
+    const bowelDurations = ['10分鐘以上', '3-10分鐘', '1-3分鐘'];
+    const bowelSymptoms = ['無', '肚子痛', '胃脹氣', '屁眼在燒', '腸絞痛', '肛門痛', '裡急後重', '便意盎然'];
+    const bowelAdditionalStatus = ['無', '怵目血跡', '便中有黏液', '大便惡臭烘烘', '大便黏稠', '大便細如筆', '消化不良'];
+    const rbdSymptomsList = [
+      { id: 'none', label: '無症狀' }, { id: 'shouting', label: '大聲叫喊' },
+      { id: 'movement', label: '肢體動作' }, { id: 'vivid-dreams', label: '生動夢境' },
+      { id: 'sleep-talking', label: '激動夢話' }, { id: 'self-injury', label: '使自己受傷' },
+      { id: 'partner-injury', label: '使伴侶受傷' }, { id: 'other', label: '其他' }
+    ];
+
+    let appState = {
+      dailyLogs: {},
+      commonMeds: [],
+      lastBackupDate: null,
+      currentDate: dayjs().format('YYYY-MM-DD'),
+      currentPage: 'log-page',
+      charts: { bowel: null, rbd: null, bowelTime: null, sleep: null, nightToilet: null },
+      statsWeekOffset: 0,
+    };
+
+    const DOM = {
+      html: document.documentElement,
+      headerTitle: document.getElementById('header-title'),
+      pages: document.querySelectorAll('.page'),
+      navItems: document.querySelectorAll('.nav-item'),
+      toast: document.getElementById('toast-notification'),
+      logDate: document.getElementById('log-date'),
+      noBowelToday: document.getElementById('no-bowel-today'),
+      bowelRecordsContainer: document.getElementById('bowel-records-container'),
+      addBowelRecordBtn: document.getElementById('add-bowel-record-btn'),
+      sleepQualityRating: document.getElementById('sleep-quality-rating'),
+      nightToiletVisits: document.getElementById('night-toilet-visits'),
+      rbdSymptoms: document.getElementById('rbd-symptoms'),
+      rbdOtherNotes: document.getElementById('rbd-other-notes'),
+      medicationLog: document.getElementById('medication-log'),
+      clearMedsBtn: document.getElementById('clear-meds-btn'),
+      commonMedsContainer: document.getElementById('common-meds-container'),
+      dailyNotes: document.getElementById('daily-notes'),
+      saveLogButton: document.getElementById('save-log-button'),
+      saveLogButtonContent: document.getElementById('save-log-button-content'),
+      statsPage: document.getElementById('stats-page'), 
+      aiInsightText: document.getElementById('ai-insight-text'), 
+      historyList: document.getElementById('history-list'),
+      weekFilter: document.getElementById('week-filter'),
+      lastBackupInfo: document.getElementById('last-backup-info'),
+      statsWeekTitle: document.getElementById('stats-week-title'),
+      prevWeekBtn: document.getElementById('prev-week-btn'),
+      nextWeekBtn: document.getElementById('next-week-btn'),
+      bowelAnalysisSection: document.getElementById('bowel-analysis-section'),
+      sleepChartCanvas: document.getElementById('sleep-chart'),
+      nightToiletChartCanvas: document.getElementById('night-toilet-chart'),
+      bowelTimeChartCanvas: document.getElementById('bowel-time-chart'),
+      bowelChartCanvas: document.getElementById('bowel-chart'),
+      rbdChartCanvas: document.getElementById('rbd-chart'),
+      statsSummarySleep: document.getElementById('stats-summary-sleep'),
+      statsSummaryNightToilet: document.getElementById('stats-summary-night-toilet'),
+      statsSummaryBowel: document.getElementById('stats-summary-bowel'),
+      statsSummaryRbd: document.getElementById('stats-summary-rbd'),
+      healthTipsSection: document.getElementById('health-tips-section'),
+      exportCsvBtn: document.getElementById('export-csv-btn'),
+      importCsvBtn: document.getElementById('import-csv-btn'),
+      importFileInput: document.getElementById('import-file-input'),
+      confirmationModal: document.getElementById('confirmation-modal'),
+      modalTitle: document.getElementById('modal-title'),
+      modalMessage: document.getElementById('modal-message'),
+      modalCancelBtn: document.getElementById('modal-cancel-btn'),
+      modalConfirmBtn: document.getElementById('modal-confirm-btn'),
+      colorInfoModal: document.getElementById('color-info-modal'),
+      colorModalTitle: document.getElementById('color-modal-title'),
+      colorModalMessage: document.getElementById('color-modal-message'),
+      colorModalCloseBtn: document.getElementById('color-modal-close-btn'),
+      colorModalOkBtn: document.getElementById('color-modal-ok-btn'),
+      medsModal: document.getElementById('meds-modal'),
+      medsModalCloseBtn: document.getElementById('meds-modal-close-btn'),
+      newMedInput: document.getElementById('new-med-input'),
+      addMedBtn: document.getElementById('add-med-btn'),
+      medsList: document.getElementById('meds-list'),
+      manageMedsBtn: document.getElementById('manage-meds-btn'),
+      themeToggle: document.getElementById('theme-toggle'),
+      themeIconSun: document.getElementById('theme-icon-sun'),
+      themeIconMoon: document.getElementById('theme-icon-moon'),
+    };
+    
+    function init() {
+      setupPWA();
+      setupTheme();
+      loadData();
+      renderStaticComponents();
+      setupEventListeners();
+      setupGestureListeners(); 
+      DOM.logDate.value = appState.currentDate;
+      loadLogForDate(appState.currentDate);
+      navigateTo('log-page');
+    }
+
+    function setupPWA() {
+        const manifest = {
+            "name": "健康日誌", "short_name": "健康日誌", "start_url": ".",
+            "display": "standalone", "background_color": "#f8fafc", "theme_color": "#3B82F6",
+            "description": "您的個人化健康與排便日誌。",
+            "icons": [{"src": "https://placehold.co/192x192/3B82F6/FFFFFF?text=日誌", "sizes": "192x192", "type": "image/png"}, {"src": "https://placehold.co/512x512/3B82F6/FFFFFF?text=日誌", "sizes": "512x512", "type": "image/png"}]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        if (!document.querySelector('link[rel="manifest"]')) {
+            const manifestLink = document.createElement('link');
+            manifestLink.rel = 'manifest';
+            manifestLink.href = manifestURL;
+            document.head.appendChild(manifestLink);
+        }
+    }
+
+    function loadData() {
+      try {
+        const dataStr = localStorage.getItem('healthLogApp');
+        if (dataStr) {
+            const data = JSON.parse(dataStr);
+            if (data.logs) { // New format with meds
+                appState.dailyLogs = data.logs;
+                appState.lastBackupDate = data.lastUpdated;
+                appState.commonMeds = data.commonMeds || [];
+            } else { // Old format
+                appState.dailyLogs = data;
+                appState.lastBackupDate = null;
+                appState.commonMeds = [];
+            }
+        }
+      } catch (error) { console.error("無法讀取 localStorage 資料:", error); appState.dailyLogs = {}; appState.commonMeds = []; }
+    }
+    
+    function saveData() {
+        const dataToSave = {
+            logs: appState.dailyLogs,
+            commonMeds: appState.commonMeds,
+            lastUpdated: new Date().toISOString()
+        };
+        localStorage.setItem('healthLogApp', JSON.stringify(dataToSave));
+        appState.lastBackupDate = dataToSave.lastUpdated;
+        updateLastBackupInfo();
+    }
+
+    function getEmptyLog() {
+      return { noBowel: false, bowel: [], sleep: 0, nightToiletVisits: -1, rbd: { symptoms: [], other: '' }, meds: '', dailyNotes: '' };
+    }
+    function getEmptyBowelRecord() {
+      return { id: Date.now(), bowelTimeOfDay: '', types: [], color: '', volume: '', duration: '', notes: '', symptoms: [], additionalStatus: [] };
+    }
+
+    function loadLogForDate(date) {
+      const log = appState.dailyLogs[date] || getEmptyLog();
+      DOM.noBowelToday.checked = log.noBowel;
+      toggleBowelSection(log.noBowel);
+      renderBowelForms(log.bowel);
+      updateStars(log.sleep);
+      DOM.nightToiletVisits.querySelectorAll('.option-button').forEach(btn => {
+        btn.classList.toggle('selected', parseInt(btn.dataset.value, 10) === log.nightToiletVisits);
+      });
+      const rbdCheckboxes = DOM.rbdSymptoms.querySelectorAll('input[type="checkbox"]');
+      rbdCheckboxes.forEach(input => {
+        input.checked = log.rbd.symptoms.includes(input.id);
+        input.disabled = false;
+      });
+      updateRbdCheckboxStates();
+      DOM.rbdOtherNotes.value = log.rbd.other;
+      DOM.rbdOtherNotes.classList.toggle('hidden', !log.rbd.symptoms.includes('other'));
+      DOM.medicationLog.value = log.meds;
+      DOM.dailyNotes.value = log.dailyNotes;
+      renderCommonMeds();
+    }
+
+    async function saveLogForDate(date) {
+        if (!validateLogForm()) return;
+        triggerHapticFeedback();
+        const originalContent = DOM.saveLogButtonContent.innerHTML;
+        DOM.saveLogButton.disabled = true;
+        DOM.saveLogButtonContent.innerHTML = `<svg class="spinner w-6 h-6 mr-2 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>儲存中...`;
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const bowelRecordsRaw = [];
+        document.querySelectorAll('.bowel-record-form').forEach(form => {
+            const getSelected = (className) => Array.from(form.querySelectorAll(`.${className} .selected`)).map(btn => btn.dataset.value);
+            bowelRecordsRaw.push({
+                id: form.dataset.id,
+                bowelTimeOfDay: form.querySelector('.bowel-time-of-day').value,
+                types: Array.from(form.querySelectorAll('.bristol-item.bristol-selected')).map(item => parseInt(item.dataset.type)),
+                color: form.querySelector('.color-item.bristol-selected')?.dataset.value || '',
+                volume: form.querySelector('.volume-options .selected')?.dataset.value || '',
+                duration: form.querySelector('.duration-options .selected')?.dataset.value || '',
+                notes: form.querySelector('.bowel-notes').value,
+                symptoms: getSelected('symptoms-options'),
+                additionalStatus: getSelected('status-options')
+            });
+        });
+        const bowelRecords = bowelRecordsRaw.filter(r => r.types.length > 0);
+        appState.dailyLogs[date] = {
+            noBowel: DOM.noBowelToday.checked,
+            bowel: DOM.noBowelToday.checked ? [] : bowelRecords,
+            sleep: DOM.sleepQualityRating.querySelectorAll('.star.selected').length,
+            nightToiletVisits: parseInt(document.querySelector('#night-toilet-visits .selected')?.dataset.value, 10) ?? -1,
+            rbd: {
+                symptoms: Array.from(document.querySelectorAll('#rbd-symptoms input:checked')).map(el => el.id),
+                other: DOM.rbdOtherNotes.value
+            },
+            meds: DOM.medicationLog.value,
+            dailyNotes: DOM.dailyNotes.value
+        };
+        if (appState.dailyLogs[date].bowel && appState.dailyLogs[date].bowel.length > 0) {
+            appState.dailyLogs[date].noBowel = false;
+        }
+        saveData();
+        DOM.saveLogButtonContent.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="mr-2 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>儲存成功！`;
+        setTimeout(() => {
+            DOM.saveLogButton.disabled = false;
+            DOM.saveLogButtonContent.innerHTML = originalContent;
+            showToast('本日日誌已儲存！', 'success');
+        }, 1200);
+    }
+
+    function renderStaticComponents() {
+      DOM.sleepQualityRating.innerHTML = '';
+      for (let i = 1; i <= 5; i++) DOM.sleepQualityRating.innerHTML += `<span class="star" data-value="${i}">&#9733;</span>`;
+      
+      DOM.nightToiletVisits.innerHTML = '';
+      for (let i = 0; i <= 5; i++) {
+        DOM.nightToiletVisits.innerHTML += `<button type="button" class="option-button text-sm py-2 px-4 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700" data-value="${i}">${i} 次</button>`;
+      }
+
+      DOM.rbdSymptoms.innerHTML = rbdSymptomsList.map(s => `<label class="flex items-center has-[:disabled]:text-slate-400"><input type="checkbox" id="${s.id}" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 custom-checkbox mr-2"> ${s.label}</label>`).join('');
+      DOM.healthTipsSection.innerHTML = `<h3 class="text-lg font-semibold">💡 健康小提示</h3><ul class="text-sm text-slate-600 dark:text-slate-400 space-y-2 list-disc list-inside"><li><b>理想便便：</b>以「布里斯托大便分類法」第3–4型為佳，特別是第4型最理想。</li><li><b>注意警訊：</b>第1–2型偏硬可能便祕；第6–7型偏稀屬腹瀉，若持續出現建議就醫。</li><li><b>健康頻率：</b>一週約7次、形態多在第3–4型，通常代表腸道功能佳。</li><li><b>顏色觀察：</b>黃褐/棕色常見；若持續黑、紅或灰白色需提高警覺。</li><li><b>生活習慣：</b>形狀受水分與纖維影響大；規律運動與排便習慣同樣重要。</li><li><b>夜間如廁：</b>年輕人每晚 0-1 次屬正常；年長者 1-2 次尚屬普遍。若長期高於 2 次且影響睡眠，建議諮詢醫師。</li></ul>`;
+    }
+    function renderBowelForms(records = []) {
+      DOM.bowelRecordsContainer.innerHTML = '';
+      if (records.length === 0 && !DOM.noBowelToday.checked) records.push(getEmptyBowelRecord());
+      records.forEach((record, index) => DOM.bowelRecordsContainer.insertAdjacentHTML('beforeend', createBowelFormHTML(record, index + 1)));
+    }
+    function createBowelFormHTML(record, index) {
+      return `<div class="bowel-record-form border-t-2 border-slate-200 dark:border-slate-700 pt-4" data-id="${record.id}"><div class="flex justify-between items-center mb-3"><h4 class="font-semibold text-md text-slate-700 dark:text-slate-300">第 ${index} 筆紀錄</h4>${index > 1 ? `<button class="remove-bowel-record-btn text-sm font-medium text-red-500 hover:text-red-700">刪除此筆</button>` : ''}</div><div class="form-section border-slate-200 dark:border-slate-700"><div class="grid grid-cols-3 gap-2">${bristolData.map(item => `<div class="bristol-item p-2 rounded-lg border-2 border-slate-200 dark:border-slate-600 cursor-pointer text-center flex flex-col justify-start items-center ${record.types.includes(item.type) ? 'bristol-selected' : ''}" data-type="${item.type}" tabindex="0"><svg viewBox="0 0 24 18" class="w-12 h-10 mx-auto mb-1">${item.svg}</svg><p class="font-semibold text-xs text-slate-800 dark:text-slate-200">類型 ${item.type}</p><p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">${item.d}</p></div>`).join('')}</div></div><div class="space-y-3 mt-3"><div class="form-section border-slate-200 dark:border-slate-700"><label class="form-section-label text-slate-600 dark:text-slate-400">⏰ 排便時間點</label><input type="time" class="bowel-time-of-day w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 rounded-md" value="${record.bowelTimeOfDay || ''}"></div><div class="form-section border-slate-200 dark:border-slate-700"><label class="form-section-label text-slate-600 dark:text-slate-400">🎨 顏色</label><div class="color-options grid grid-cols-3 gap-2">${bowelColorData.map(color => `<div class="color-item p-2 rounded-lg border-2 border-slate-200 dark:border-slate-600 cursor-pointer text-center flex flex-col items-center justify-center ${record.color === color.name ? 'bristol-selected' : ''}" data-value="${color.name}"><div class="w-10 h-10 rounded-full mb-1" style="background-color:${color.colorHex};"></div><p class="text-xs text-slate-600 dark:text-slate-400">${color.name}</p></div>`).join('')}</div></div><div class="grid grid-cols-2 gap-3">${createOptionGroup('📏 排便量', 'volume-options', bowelVolumes, record.volume, false)}${createOptionGroup('⏱️ 排便耗時', 'duration-options', bowelDurations, record.duration, false)}</div>${createOptionGroup('😖 症狀', 'symptoms-options', bowelSymptoms, record.symptoms, true)}${createOptionGroup('✨ 附加狀態', 'status-options', bowelAdditionalStatus, record.additionalStatus, true)}<div class="form-section border-slate-200 dark:border-slate-700"><label class="form-section-label text-slate-600 dark:text-slate-400">🗒️ 備註</label><textarea class="bowel-notes w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 rounded-md">${record.notes || ''}</textarea></div></div></div>`;
+    }
+    function createOptionGroup(label, className, options, selectedValues, isMultiSelect) {
+      const groupClass = isMultiSelect ? `option-button-group ${className} multi-select-group flex flex-wrap gap-2` : `option-button-group ${className} flex flex-wrap gap-2`;
+      const buttons = options.map(opt => `<button type="button" class="option-button text-sm py-1 px-3 rounded-full border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 ${(Array.isArray(selectedValues) ? selectedValues.includes(opt) : opt === selectedValues) ? 'selected' : ''}" data-value="${opt}">${opt}</button>`).join('');
+      return `<div class="form-section border-slate-200 dark:border-slate-700"><label class="form-section-label text-sm text-slate-600 dark:text-slate-400">${label}</label><div class="${groupClass}">${buttons}</div></div>`;
+    }
+
+    function getBowelStatus(types) {
+        if (!types || types.length === 0) return null;
+        const avg = types.reduce((a, b) => a + b, 0) / types.length;
+        if (avg >= 3 && avg < 5) return { text: '健康', colorClass: 'status-badge-green', icon: '✅' };
+        if (avg < 3) return { text: '便秘', colorClass: 'status-badge-orange', icon: '⚠️' };
+        if (avg >= 5) return { text: '腹瀉', colorClass: 'status-badge-blue', icon: '💧' };
+        return null;
+    }
+
+    function renderHistoryList(filterWeek = 'all') {
+      const sortedDates = Object.keys(appState.dailyLogs).sort().reverse();
+      
+      const filteredDates = filterWeek === 'all' 
+        ? sortedDates
+        : sortedDates.filter(date => {
+            const [year, week] = filterWeek.split('-');
+            return dayjs(date).year() == year && dayjs(date).week() == week;
+        });
+
+      if (filteredDates.length === 0) {
+        DOM.historyList.innerHTML = `<p class="text-center text-slate-500 dark:text-slate-400 py-8">此時間範圍內沒有紀錄。</p>`;
+        return;
+      }
+
+      DOM.historyList.innerHTML = filteredDates.map(date => {
+        const log = appState.dailyLogs[date];
+        const sleep = log.sleep > 0 ? `${'★'.repeat(log.sleep)}${'☆'.repeat(5 - log.sleep)}` : '未記錄';
+        const nightVisits = (log.nightToiletVisits !== undefined && log.nightToiletVisits > -1) ? `${log.nightToiletVisits} 次` : '未記錄';
+        const rbdText = log.rbd.symptoms.length > 0 ? log.rbd.symptoms.map(id => rbdSymptomsList.find(s => s.id === id)?.label || id).join('、 ') : '無';
+        
+        return `<div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+            <div class="flex justify-between items-center mb-3">
+                <p class="font-bold text-lg text-slate-800 dark:text-slate-200">${dayjs(date).format('YYYY年M月D日')}</p>
+                <button class="edit-log-btn text-sm text-blue-600 hover:underline" data-date="${date}">查看/編輯</button>
+            </div>
+            <div class="text-sm text-slate-700 dark:text-slate-300 space-y-2">
+                <p>😴 <b class="font-semibold">睡眠:</b> ${sleep} | 🚽 <b class="font-semibold">夜間如廁:</b> ${nightVisits}</p>
+                <div>
+                    <p class="mb-1">💩 <b class="font-semibold">排便紀錄:</b></p> 
+                    ${log.noBowel ? '<span class="text-slate-500 dark:text-slate-400 ml-5">當日無排便</span>' : (log.bowel && log.bowel.length > 0 ? `<ul class="list-none pl-5 space-y-1">${log.bowel.map(b => {
+                        const status = getBowelStatus(b.types);
+                        const statusBadge = status ? `<span class="status-badge ${status.colorClass}">${status.icon} ${status.text}</span>` : '';
+                        return `<li class="border-l-2 border-slate-200 dark:border-slate-700 pl-2">
+                                  <div class="flex items-center text-xs">${b.bowelTimeOfDay ? `<b>${b.bowelTimeOfDay}</b>` : ''}${statusBadge}</div>
+                                  <div class="text-slate-500 dark:text-slate-400 text-[11px]">類型 ${Array.isArray(b.types) && b.types.length ? b.types.join(', ') : '?'} (${b.color || 'N/A'}, ${b.volume || 'N/A'})</div>
+                                </li>`;
+                    }).join('')}</ul>` : '<span class="text-slate-500 dark:text-slate-400 ml-5">未記錄</span>')}
+                </div>
+                <div><p>🏃‍♂️ <b class="font-semibold">RBD 症狀:</b> <span class="text-xs">${rbdText}</span></p></div>
+            </div>
+        </div>`;
+      }).join('');
+    }
+
+    function updateLastBackupInfo() {
+        if (appState.lastBackupDate) {
+            DOM.lastBackupInfo.textContent = `最後備份於：${dayjs(appState.lastBackupDate).format('YYYY/MM/DD HH:mm:ss')}`;
+        } else {
+            DOM.lastBackupInfo.textContent = '尚未有任何備份紀錄。';
+        }
+    }
+
+    function getChartColors() {
+      const isDarkMode = DOM.html.classList.contains('dark');
+      return { gridColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)', textColor: isDarkMode ? '#cbd5e1' : '#475569' };
+    }
+
+    function updateCharts() {
+      const weekStart = dayjs().subtract(appState.statsWeekOffset, 'week').startOf('week');
+      const weekEnd = dayjs().subtract(appState.statsWeekOffset, 'week').endOf('week');
+      DOM.statsWeekTitle.textContent = `${weekStart.format('YYYY/M/D')} - ${weekEnd.format('M/D')}`;
+      DOM.nextWeekBtn.disabled = appState.statsWeekOffset <= 0;
+      const weekData = getWeekData(weekStart); 
+      generateHealthInsights(weekData); 
+      updateBowelAnalysis(weekStart);
+      updateSleepChart(weekStart, weekData);
+      updateNightToiletChart(weekStart, weekData);
+      updateBowelTimeChart(weekStart, weekData);
+      updateBowelChart(weekStart, weekData);
+      updateRbdChart(weekStart, weekData);
+    }
+
+    function getWeekData(weekStart) {
+        const data = { labels: [], sleep: [], nightToilet: [], bowel: [], bowelCount: [], rbd: [], dates: [] };
+        for (let i = 0; i < 7; i++) {
+            const date = weekStart.add(i, 'day');
+            const dateStr = date.format('YYYY-MM-DD');
+            const log = appState.dailyLogs[dateStr];
+            data.labels.push(date.format('M/D'));
+            data.dates.push(dateStr);
+            data.sleep.push(log ? log.sleep : null);
+            data.nightToilet.push(log && log.nightToiletVisits > -1 ? log.nightToiletVisits : null);
+            data.bowel.push(log && log.bowel && log.bowel.length > 0 ? log.bowel.flatMap(b => b.types) : null);
+            data.bowelCount.push(log && log.bowel ? log.bowel.length : 0);
+            data.rbd.push(log && log.rbd && log.rbd.symptoms.length > 0 && !log.rbd.symptoms.includes('none') ? log.rbd.symptoms.length : 0);
+        }
+        return data;
+    }
+
+    function generateHealthInsights(weekData) {
+        const totalBowelMovements = weekData.bowelCount.reduce((a, b) => a + b, 0);
+        
+        const validSleep = weekData.sleep.filter(s => s > 0);
+        const avgSleepText = validSleep.length > 0 
+            ? `平均 ${ (validSleep.reduce((a, b) => a + b, 0) / validSleep.length).toFixed(1) } 顆星`
+            : '無紀錄';
+
+        const totalNightToilet = weekData.nightToilet.filter(n => n !== null).reduce((a, b) => a + b, 0);
+        const totalRbd = weekData.rbd.reduce((a, b) => a + b, 0);
+
+        DOM.aiInsightText.innerHTML = `
+            <ul class="list-disc list-inside space-y-1">
+                <li>💩 <b>排便紀錄：</b>共 ${totalBowelMovements} 次</li>
+                <li>😴 <b>睡眠品質：</b>${avgSleepText}</li>
+                <li>🚽 <b>起床如廁次數：</b>共 ${totalNightToilet} 次</li>
+                <li>🏃‍♂️ <b>RBD 症狀：</b>共 ${totalRbd} 次</li>
+            </ul>
+        `;
+    }
+
+    function updateBowelAnalysis(weekStart) {
+      const allLogs = appState.dailyLogs;
+      let lastBM = null;
+      const sortedDates = Object.keys(allLogs).sort().reverse();
+      for (const date of sortedDates) {
+        if (allLogs[date].bowel && allLogs[date].bowel.length > 0) {
+          const sortedBMs = allLogs[date].bowel.filter(b => b.bowelTimeOfDay).sort((a, b) => b.bowelTimeOfDay.localeCompare(a.bowelTimeOfDay));
+          if (sortedBMs.length > 0) { lastBM = dayjs(`${date} ${sortedBMs[0].bowelTimeOfDay}`); break; }
+        }
+      }
+      const getStatsForPeriod = (startDate, endDate) => {
+        let totalBMs = 0, goodBMs = 0;
+        for (let d = startDate; d.isBefore(endDate) || d.isSame(endDate); d = d.add(1, 'day')) {
+          const log = allLogs[d.format('YYYY-MM-DD')];
+          if (log && log.bowel && log.bowel.length > 0) {
+            totalBMs += log.bowel.length;
+            log.bowel.forEach(b => { 
+                const status = getBowelStatus(b.types);
+                if (status && status.text === '健康') goodBMs++;
+            });
+          }
+        }
+        return { totalBMs, goodBMs };
+      };
+      const currentWeekStats = getStatsForPeriod(weekStart, weekStart.add(6, 'day'));
+      const previousWeekStats = getStatsForPeriod(weekStart.subtract(7, 'day'), weekStart.subtract(1, 'day'));
+      const goodBMPercent = currentWeekStats.totalBMs > 0 ? Math.round((currentWeekStats.goodBMs / currentWeekStats.totalBMs) * 100) : 0;
+      const prevGoodBMPercent = previousWeekStats.totalBMs > 0 ? Math.round((previousWeekStats.goodBMs / previousWeekStats.totalBMs) * 100) : 0;
+      const weekLabel = appState.statsWeekOffset === 0 ? '本週' : '該週';
+      DOM.bowelAnalysisSection.innerHTML = `<h3 class="text-lg font-semibold">📊 排便分析</h3><p class="text-sm text-slate-600 dark:text-slate-400"><b>上一次排便：</b> ${lastBM ? lastBM.fromNow() : '無紀錄'}</p><div class="grid grid-cols-2 gap-4 text-center"><div class="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p class="text-2xl font-bold">${currentWeekStats.totalBMs} <span class="text-sm font-normal">次</span></p><p class="text-xs text-slate-500 dark:text-slate-400">${weekLabel}</p><p class="text-xs text-slate-500 dark:text-slate-400 mt-1">相較於前7天的 ${previousWeekStats.totalBMs} 次</p></div><div class="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p class="text-2xl font-bold">${goodBMPercent}<span class="text-sm font-normal">%</span></p><p class="text-xs text-slate-500 dark:text-slate-400">${weekLabel}健康便便</p><p class="text-xs text-slate-500 dark:text-slate-400 mt-1">相較於前7天的 ${prevGoodBMPercent}%</p></div></div>`;
+    }
+    function updateSleepChart(weekStart, weekData) {
+      const colors = getChartColors();
+      if (appState.charts.sleep) appState.charts.sleep.destroy();
+      appState.charts.sleep = new Chart(DOM.sleepChartCanvas, { type: 'line', data: { labels: weekData.labels, datasets: [{ label: '睡眠品質', data: weekData.sleep, borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', fill: true, tension: 0.3, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 1, max: 5, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false } } } });
+      const validRecords = weekData.sleep.filter(p => p !== null && p > 0);
+      DOM.statsSummarySleep.textContent = validRecords.length > 0 ? `本週平均睡眠品質為 ${(validRecords.reduce((a, b) => a + b, 0) / validRecords.length).toFixed(1)} 顆星。` : '本週沒有睡眠品質紀錄。';
+    }
+    function updateNightToiletChart(weekStart, weekData) {
+      const colors = getChartColors();
+      if (appState.charts.nightToilet) appState.charts.nightToilet.destroy();
+      appState.charts.nightToilet = new Chart(DOM.nightToiletChartCanvas, { type: 'bar', data: { labels: weekData.labels, datasets: [{ label: '夜間如廁次數', data: weekData.nightToilet, backgroundColor: 'rgba(139, 92, 246, 0.6)', borderColor: 'rgba(139, 92, 246, 1)', borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false } } } });
+      const validRecords = weekData.nightToilet.filter(p => p !== null);
+      DOM.statsSummaryNightToilet.textContent = validRecords.length > 0 ? `本週平均夜間如廁 ${(validRecords.reduce((a, b) => a + b, 0) / validRecords.length).toFixed(1)} 次。` : '本週沒有夜間如廁紀錄。';
+    }
+    function updateBowelTimeChart(weekStart, weekData) {
+      const colors = getChartColors();
+      const datasets = [];
+      weekData.dates.forEach((dateStr, i) => {
+        const log = appState.dailyLogs[dateStr];
+        if (log && log.bowel && log.bowel.length > 0) {
+          log.bowel.forEach(b => {
+            if (b.bowelTimeOfDay) {
+              const time = dayjs(b.bowelTimeOfDay, 'HH:mm');
+              datasets.push({ x: i, y: time.hour() + time.minute() / 60, types: Array.isArray(b.types) ? b.types.join(', ') : '' });
+            }
+          });
+        }
+      });
+      if (appState.charts.bowelTime) appState.charts.bowelTime.destroy();
+      appState.charts.bowelTime = new Chart(DOM.bowelTimeChartCanvas, { type: 'scatter', data: { datasets: [{ label: '排便時間', data: datasets, backgroundColor: 'rgba(59, 130, 246, 0.7)', pointRadius: 6, pointHoverRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'linear', position: 'bottom', ticks: { color: colors.textColor, stepSize: 1, callback: (value) => weekData.labels[value] || '' }, grid: { display: false } }, y: { reverse: true, min: 0, max: 24, ticks: { color: colors.textColor, stepSize: 3, callback: (value) => `${String(value).padStart(2, '0')}:00` }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => { const d = c.dataset.data[c.dataIndex]; const h = Math.floor(d.y); const m = Math.round((d.y - h) * 60); return `時間: ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} (類型: ${d.types})`; } } } } } });
+    }
+    function updateBowelChart(weekStart, weekData) {
+      const colors = getChartColors();
+      const dataPoints = weekData.bowel.map(dayBowel => {
+        if (dayBowel && dayBowel.length > 0) return dayBowel.reduce((a, b) => a + b, 0) / dayBowel.length;
+        return null;
+      });
+      if (appState.charts.bowel) appState.charts.bowel.destroy();
+      appState.charts.bowel = new Chart(DOM.bowelChartCanvas, { type: 'line', data: { labels: weekData.labels, datasets: [{ label: '布里斯托分類', data: dataPoints, borderColor: '#3B82F6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.3, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 1, max: 7, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false } } } });
+      const validRecords = dataPoints.filter(p => p !== null);
+      DOM.statsSummaryBowel.textContent = validRecords.length > 0 ? `本週平均類型為 ${(validRecords.reduce((a, b) => a + b, 0) / validRecords.length).toFixed(1)}。` : '本週沒有排便紀錄。';
+    }
+    function updateRbdChart(weekStart, weekData) {
+      const colors = getChartColors();
+      const rbdSymptomMap = rbdSymptomsList.reduce((acc, s) => ({...acc, [s.id]: s.label}), {});
+      const tooltipLabels = weekData.dates.map(dateStr => {
+          const log = appState.dailyLogs[dateStr];
+          if (log && Array.isArray(log.rbd.symptoms) && log.rbd.symptoms.length > 0 && !log.rbd.symptoms.includes('none')) {
+              return log.rbd.symptoms.map(id => rbdSymptomMap[id] || id).join('、 ');
+          }
+          return '無症狀';
+      });
+      if (appState.charts.rbd) appState.charts.rbd.destroy();
+      appState.charts.rbd = new Chart(DOM.rbdChartCanvas, { type: 'bar', data: { labels: weekData.labels, datasets: [{ label: '症狀次數', data: weekData.rbd, backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: 'rgba(239, 68, 68, 1)', borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y} 次`, afterLabel: (c) => tooltipLabels[c.dataIndex] } } } } });
+      DOM.statsSummaryRbd.textContent = `本週共記錄 ${weekData.rbd.reduce((a, b) => a + b, 0)} 次RBD相關症狀。`;
+    }
+
+    function setupEventListeners() {
+      DOM.logDate.addEventListener('change', e => { appState.currentDate = e.target.value; loadLogForDate(appState.currentDate); });
+      DOM.noBowelToday.addEventListener('change', e => toggleBowelSection(e.target.checked));
+      DOM.addBowelRecordBtn.addEventListener('click', () => DOM.bowelRecordsContainer.insertAdjacentHTML('beforeend', createBowelFormHTML(getEmptyBowelRecord(), DOM.bowelRecordsContainer.children.length + 1)));
+      DOM.bowelRecordsContainer.addEventListener('click', e => {
+        const t = e.target;
+        const bristolItem = t.closest('.bristol-item'); if (bristolItem) bristolItem.classList.toggle('bristol-selected');
+        const colorItem = t.closest('.color-item'); 
+        if (colorItem) { 
+            const g = colorItem.closest('.color-options'); 
+            g.querySelectorAll('.color-item').forEach(i => i.classList.remove('bristol-selected')); 
+            colorItem.classList.add('bristol-selected');
+            const colorName = colorItem.dataset.value;
+            const colorInfo = bowelColorData.find(c => c.name === colorName);
+            if (colorInfo) showColorInfoModal(colorInfo);
+        }
+        const optionButton = t.closest('.option-button'); if (optionButton) { const g = optionButton.closest('.option-button-group'); if (g.classList.contains('multi-select-group')) { if (optionButton.dataset.value === '無') { g.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected')); optionButton.classList.add('selected'); } else { const n = g.querySelector('[data-value="無"]'); if (n) n.classList.remove('selected'); optionButton.classList.toggle('selected'); } } else { g.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected')); optionButton.classList.add('selected'); } }
+        if (t.classList.contains('remove-bowel-record-btn')) { t.closest('.bowel-record-form').remove(); DOM.bowelRecordsContainer.querySelectorAll('h4').forEach((h, i) => h.textContent = `第 ${i + 1} 筆紀錄`); }
+      });
+      DOM.sleepQualityRating.addEventListener('click', e => { if (e.target.classList.contains('star')) updateStars(e.target.dataset.value); });
+      DOM.nightToiletVisits.addEventListener('click', e => {
+        const button = e.target.closest('.option-button');
+        if (button) {
+          DOM.nightToiletVisits.querySelectorAll('.option-button').forEach(btn => btn.classList.remove('selected'));
+          button.classList.add('selected');
+        }
+      });
+      DOM.rbdSymptoms.addEventListener('change', () => { const o = DOM.rbdSymptoms.querySelector('#other'); updateRbdCheckboxStates(); DOM.rbdOtherNotes.classList.toggle('hidden', !o.checked); if (!o.checked) DOM.rbdOtherNotes.value = ''; });
+      DOM.saveLogButton.addEventListener('click', () => saveLogForDate(appState.currentDate));
+      DOM.navItems.forEach(item => item.addEventListener('click', () => { triggerHapticFeedback(30); navigateTo(item.dataset.page); }));
+      DOM.historyList.addEventListener('click', e => { const b = e.target.closest('.edit-log-btn'); if (b) { appState.currentDate = b.dataset.date; DOM.logDate.value = appState.currentDate; loadLogForDate(appState.currentDate); navigateTo('log-page'); } });
+      DOM.prevWeekBtn.addEventListener('click', () => { appState.statsWeekOffset++; updateCharts(); });
+      DOM.nextWeekBtn.addEventListener('click', () => { if (appState.statsWeekOffset > 0) { appState.statsWeekOffset--; updateCharts(); } });
+      DOM.exportCsvBtn.addEventListener('click', exportDataAsCsv); 
+      DOM.importCsvBtn.addEventListener('click', () => DOM.importFileInput.click());
+      DOM.importFileInput.addEventListener('change', importData);
+      DOM.themeToggle.addEventListener('click', toggleTheme);
+      DOM.modalCancelBtn.addEventListener('click', () => DOM.confirmationModal.classList.add('hidden'));
+      DOM.colorModalCloseBtn.addEventListener('click', () => DOM.colorInfoModal.classList.add('hidden'));
+      DOM.colorModalOkBtn.addEventListener('click', () => DOM.colorInfoModal.classList.add('hidden'));
+      DOM.manageMedsBtn.addEventListener('click', openMedsModal);
+      DOM.medsModalCloseBtn.addEventListener('click', () => DOM.medsModal.classList.add('hidden'));
+      DOM.addMedBtn.addEventListener('click', addCommonMed);
+      DOM.medsList.addEventListener('click', e => { if(e.target.classList.contains('delete-med-btn')) deleteCommonMed(e.target.dataset.med); });
+      DOM.clearMedsBtn.addEventListener('click', () => { DOM.medicationLog.value = ''; });
+      DOM.commonMedsContainer.addEventListener('click', e => { if(e.target.classList.contains('common-med-btn')) addMedToLog(e.target.dataset.med); });
+      DOM.weekFilter.addEventListener('change', e => renderHistoryList(e.target.value));
+    }
+
+    function setupGestureListeners() {
+        let touchStartX = 0; let touchEndX = 0; const swipeThreshold = 50; 
+        DOM.statsPage.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
+        DOM.statsPage.addEventListener('touchend', e => { touchEndX = e.changedTouches[0].screenX; handleSwipe(); }, { passive: true });
+        function handleSwipe() {
+            const swipeDistance = touchEndX - touchStartX;
+            if (Math.abs(swipeDistance) < swipeThreshold) return; 
+            if (swipeDistance > 0) { DOM.prevWeekBtn.click(); } 
+            else { if (!DOM.nextWeekBtn.disabled) { DOM.nextWeekBtn.click(); } }
+        }
+    }
+
+    function navigateTo(pageId) {
+      appState.currentPage = pageId;
+      DOM.pages.forEach(p => p.classList.toggle('active', p.id === pageId));
+      const titles = { 'log-page': '📝 健康日誌', 'stats-page': '📊 統計圖表', 'history-page': '📜 歷史紀錄' };
+      DOM.headerTitle.textContent = titles[pageId] || '健康日誌';
+      DOM.navItems.forEach(item => item.classList.toggle('active', item.dataset.page === pageId));
+      if (pageId === 'history-page') { populateWeekFilter(); renderHistoryList(); updateLastBackupInfo(); }
+      else if (pageId === 'stats-page') { appState.statsWeekOffset = 0; updateCharts(); }
+      else if (pageId === 'log-page') { renderCommonMeds(); }
+    }
+    function updateStars(v) { DOM.sleepQualityRating.querySelectorAll('.star').forEach(s => s.classList.toggle('selected', Number(s.dataset.value) <= Number(v))); }
+    function updateRbdCheckboxStates() {
+      const n = DOM.rbdSymptoms.querySelector('#none'), o = DOM.rbdSymptoms.querySelectorAll('input:not(#none)');
+      if (n.checked) { o.forEach(c => { c.checked = false; c.disabled = true; }); } 
+      else { const a = Array.from(o).some(c => c.checked); n.disabled = a; o.forEach(c => { c.disabled = false; }); }
+    }
+    function toggleBowelSection(disabled) {
+      DOM.bowelRecordsContainer.classList.toggle('bowel-record-disabled', disabled);
+      DOM.addBowelRecordBtn.classList.toggle('bowel-record-disabled', disabled);
+      if (disabled) DOM.bowelRecordsContainer.innerHTML = '';
+      else if (DOM.bowelRecordsContainer.children.length === 0) renderBowelForms([]);
+    }
+    let toastTimer;
+    function showToast(message, type = 'error') {
+      clearTimeout(toastTimer);
+      const t = DOM.toast;
+      t.textContent = message;
+      const c = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500' };
+      t.className = 'px-6 py-3 rounded-full font-semibold text-white shadow-lg';
+      t.classList.add(c[type], 'show');
+      toastTimer = setTimeout(() => t.classList.remove('show'), 4000);
+    }
+    function showConfirmation(title, message, onConfirm) {
+        DOM.modalTitle.textContent = title;
+        DOM.modalMessage.textContent = message;
+        DOM.confirmationModal.classList.remove('hidden');
+        const confirmHandler = () => { onConfirm(); DOM.confirmationModal.classList.add('hidden'); };
+        DOM.modalConfirmBtn.replaceWith(DOM.modalConfirmBtn.cloneNode(true));
+        DOM.modalConfirmBtn = document.getElementById('modal-confirm-btn');
+        DOM.modalConfirmBtn.addEventListener('click', confirmHandler, { once: true });
+    }
+    function showColorInfoModal(colorInfo) {
+        DOM.colorModalTitle.textContent = colorInfo.infoTitle;
+        DOM.colorModalMessage.textContent = colorInfo.infoText;
+        DOM.colorInfoModal.classList.remove('hidden');
+    }
+
+    function setupTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+        DOM.html.classList.add('dark'); DOM.themeIconSun.classList.remove('hidden');
+      } else {
+        DOM.html.classList.remove('dark'); DOM.themeIconMoon.classList.remove('hidden');
+      }
+    }
+    function toggleTheme() {
+      const isDark = DOM.html.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      DOM.themeIconSun.classList.toggle('hidden', !isDark);
+      DOM.themeIconMoon.classList.toggle('hidden', isDark);
+      if (appState.currentPage === 'stats-page') updateCharts();
+    }
+
+    function validateLogForm() {
+      const missing = [];
+      if (DOM.sleepQualityRating.querySelectorAll('.star.selected').length === 0) missing.push('昨晚睡眠品質');
+      if (document.querySelector('#night-toilet-visits .selected') === null) missing.push('夜間如廁次數');
+      if (document.querySelectorAll('#rbd-symptoms input:checked').length === 0) missing.push('RBD 症狀');
+      if (!DOM.noBowelToday.checked) {
+        const bowelForms = document.querySelectorAll('.bowel-record-form');
+        if (bowelForms.length === 0) missing.push('至少一筆排便紀錄');
+        bowelForms.forEach((form, index) => {
+          const r = `第 ${index + 1} 筆排便`;
+          if (form.querySelectorAll('.bristol-item.bristol-selected').length === 0) missing.push(`${r}的類型`);
+          if (!form.querySelector('.bowel-time-of-day').value) missing.push(`${r}的時間`);
+          if (!form.querySelector('.color-item.bristol-selected')) missing.push(`${r}的顏色`);
+          if (!form.querySelector('.volume-options .selected')) missing.push(`${r}的排便量`);
+          if (!form.querySelector('.duration-options .selected')) missing.push(`${r}的排便耗時`);
+          if (form.querySelectorAll('.symptoms-options .selected').length === 0) missing.push(`${r}的症狀`);
+          if (form.querySelectorAll('.status-options .selected').length === 0) missing.push(`${r}的附加狀態`);
+        });
+      }
+      if (missing.length > 0) { showToast(`請完成以下欄位：${missing.join('、')}`, 'error'); return false; }
+      return true;
+    }
+
+    function parseCsvRow(rowString) {
+      const values = []; let currentVal = ''; let inQuotes = false;
+      for (let i = 0; i < rowString.length; i++) {
+        const char = rowString[i];
+        if (char === '"') { if (inQuotes && rowString[i + 1] === '"') { currentVal += '"'; i++; } else { inQuotes = !inQuotes; } } 
+        else if (char === ',' && !inQuotes) { values.push(currentVal); currentVal = ''; } 
+        else { currentVal += char; }
+      }
+      values.push(currentVal); return values;
+    }
+    function formatCsvCell(value) {
+        const strValue = String(value).replace(/"/g, '""');
+        if (strValue.includes(',') || strValue.includes('"') || strValue.includes('\n')) return `"${strValue}"`;
+        return strValue;
+    }
+
+    function exportDataAsCsv() {
+        const headers = ['date', 'noBowel', 'bowelRecords', 'sleep', 'nightToiletVisits', 'rbdSymptoms', 'rbdOther', 'meds', 'dailyNotes'];
+        const csvRows = [headers.join(',')];
+        const sortedDates = Object.keys(appState.dailyLogs).sort();
+        for (const date of sortedDates) {
+            const log = appState.dailyLogs[date];
+            const row = [date, log.noBowel, JSON.stringify(log.bowel || []), log.sleep || 0, log.nightToiletVisits ?? -1, JSON.stringify(log.rbd ? log.rbd.symptoms : []), log.rbd ? log.rbd.other : '', log.meds || '', log.dailyNotes || ''].map(formatCsvCell).join(',');
+            csvRows.push(row);
+        }
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' });
+        const fileName = `health_log_${dayjs().format('YYYYMMDD_HHmmss')}.csv`;
+        
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', fileName);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('資料已開始下載！', 'success');
+    }
+
+    function importData(event) {
+        const file = event.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const lines = e.target.result.split('\n').filter(line => line.trim() !== '');
+            if (lines.length < 2) { showToast('CSV 檔案為空或格式不正確。', 'error'); return; }
+            const headers = parseCsvRow(lines.shift()).map(cleanInvisible);
+            if (!['date', 'noBowel', 'bowelRecords', 'sleep'].every(h => headers.includes(h))) { showToast('CSV 檔案缺少必要的欄位。', 'error'); return; }
+            const importedLogs = {}; let errorCount = 0;
+            lines.forEach((line, index) => {
+                try {
+                    const values = parseCsvRow(line);
+                    const rowData = headers.reduce((obj, h, i) => ({...obj, [h]: values[i]}), {});
+                    const date = dayjs(rowData.date).format('YYYY-MM-DD');
+                    if (date === 'Invalid Date') throw new Error('Invalid date format');
+                    importedLogs[date] = {
+                        noBowel: rowData.noBowel === 'true', bowel: JSON.parse(rowData.bowelRecords || '[]'),
+                        sleep: parseInt(rowData.sleep, 10) || 0,
+                        nightToiletVisits: parseInt(rowData.nightToiletVisits, 10) ?? -1,
+                        rbd: { symptoms: JSON.parse(rowData.rbdSymptoms || '[]'), other: rowData.rbdOther || '' },
+                        meds: rowData.meds || '', dailyNotes: rowData.dailyNotes || ''
+                    };
+                } catch (err) { errorCount++; console.error(`無法解析第 ${index + 2} 行:`, err); }
+            });
+            if(errorCount > 0) showToast(`匯入完成，但有 ${errorCount} 行資料解析失敗。`, 'error');
+            showConfirmation('匯入資料', `成功解析 ${Object.keys(importedLogs).length} 筆紀錄。確定要匯入並覆蓋現有資料嗎？`, () => {
+                Object.assign(appState.dailyLogs, importedLogs);
+                saveData();
+                showToast('資料匯入成功！', 'success');
+                if (appState.currentPage === 'history-page') { populateWeekFilter(); renderHistoryList(); }
+                loadLogForDate(appState.currentDate);
+            });
+        };
+        reader.onerror = () => showToast('無法讀取檔案。', 'error');
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+    
+    // Medication Management Functions
+    function openMedsModal() {
+        renderMedsList();
+        DOM.medsModal.classList.remove('hidden');
+        DOM.newMedInput.focus();
+    }
+
+    function renderMedsList() {
+        DOM.medsList.innerHTML = appState.commonMeds.map(med => `
+            <div class="flex justify-between items-center p-2 bg-slate-100 dark:bg-slate-700 rounded-md">
+                <span class="text-slate-800 dark:text-slate-200">${med}</span>
+                <button class="delete-med-btn text-red-500 hover:text-red-700 text-xs" data-med="${med}">刪除</button>
+            </div>
+        `).join('');
+    }
+
+    function addCommonMed() {
+        const medName = DOM.newMedInput.value.trim();
+        if (medName && !appState.commonMeds.includes(medName)) {
+            appState.commonMeds.push(medName);
+            saveData();
+            renderMedsList();
+            renderCommonMeds();
+            DOM.newMedInput.value = '';
+        }
+    }
+
+    function deleteCommonMed(medName) {
+        appState.commonMeds = appState.commonMeds.filter(med => med !== medName);
+        saveData();
+        renderMedsList();
+        renderCommonMeds();
+    }
+    
+    function renderCommonMeds() {
+        DOM.commonMedsContainer.innerHTML = appState.commonMeds.map(med => 
+            `<button class="common-med-btn text-xs py-1 px-3 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200" data-med="${med}">${med}</button>`
+        ).join('');
+    }
+    
+    function addMedToLog(medName) {
+        const currentLog = DOM.medicationLog.value;
+        const separator = currentLog.length > 0 && !/\s$/.test(currentLog) ? ', ' : '';
+        DOM.medicationLog.value += separator + medName;
+        DOM.medicationLog.focus();
+    }
+
+    // Week Filter Functions
+    function populateWeekFilter() {
+        const weeks = new Set();
+        Object.keys(appState.dailyLogs).forEach(date => {
+            const d = dayjs(date);
+            weeks.add(`${d.year()}-${d.week()}`);
+        });
+
+        const sortedWeeks = Array.from(weeks).sort((a, b) => b.localeCompare(a));
+        
+        DOM.weekFilter.innerHTML = '<option value="all">全部紀錄</option>';
+        sortedWeeks.forEach(weekStr => {
+            const [year, week] = weekStr.split('-');
+            const weekStart = dayjs().year(year).week(week).startOf('week').format('M/D');
+            const weekEnd = dayjs().year(year).week(week).endOf('week').format('M/D');
+            DOM.weekFilter.innerHTML += `<option value="${weekStr}">${year}年 (${weekStart} - ${weekEnd})</option>`;
+        });
+    }
+
+    init();
+  });
+  </script>
 </body>
-
 </html>
