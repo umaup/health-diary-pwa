@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-  <title>Uma健康日誌</title>
+  <title>健康日誌</title>
   
   <!-- PWA Manifest and Theme Color -->
   <meta name="theme-color" content="#f8fafc"/>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="健康日誌">
-  <link rel="apple-touch-icon" href="https://placehold.co/192x192/3B82F6/FFFFFF?text=Uma">
+  <link rel="apple-touch-icon" href="https://placehold.co/192x192/3B82F6/FFFFFF?text=Log">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -78,7 +78,7 @@
     .option-button-group .option-button.selected { background-color: #3B82F6; color: white; border-color: #3B82F6; }
 
     .bowel-record-disabled { opacity: 0.5; pointer-events: none; }
-    #confirmation-modal.hidden { display: none; }
+    .modal-backdrop.hidden { display: none; }
 
     .form-section { border-top-width: 1px; padding-top: 10px; margin-top: 10px; }
     .form-section-label { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.9rem; }
@@ -90,30 +90,18 @@
 
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .spinner { animation: spin 1s linear infinite; }
+    
+    .chart-canvas { cursor: pointer; }
 
-    /* MODIFIED: Fullscreen Mode Styles */
-    #app-header-top {
-        transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out, border 0.3s ease-in-out;
-        max-height: 100px; /* A value larger than the actual height */
-        overflow: hidden;
-    }
-    .fullscreen-mode #app-header-top {
-        max-height: 0;
-        padding-top: 0;
-        padding-bottom: 0;
-        border-bottom-width: 0;
-    }
+    /* --- 已移除所有列印專用樣式 --- */
   </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-950 transition-colors duration-300">
   <div id="app" class="max-w-lg mx-auto bg-slate-50 dark:bg-slate-900 min-h-screen shadow-lg relative transition-colors duration-300 overflow-x-hidden">
     <header id="app-header" class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm sticky top-0 z-10 shadow-sm transition-colors duration-300">
       <div id="app-header-top" class="text-slate-800 dark:text-slate-200 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-        <button id="fullscreen-toggle" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" aria-label="切換全螢幕">
-          <svg id="icon-maximize" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-          <svg id="icon-minimize" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
-        </button>
-        <h1 id="header-title" class="text-xl font-bold tracking-wide text-center">Uma健康日誌</h1>
+        <div class="w-10 h-10"></div> <!-- Placeholder for alignment -->
+        <h1 id="header-title" class="text-xl font-bold tracking-wide text-center">健康日誌</h1>
         <button id="theme-toggle" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" aria-label="切換主題">
           <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
           <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
@@ -147,7 +135,10 @@
           </section>
 
           <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
-            <h2 class="text-lg font-semibold">排便紀錄</h2>
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-semibold">排便紀錄</h2>
+                <div id="daily-bowel-summary" class="text-xs text-slate-500 dark:text-slate-400 font-mono"></div>
+            </div>
             <label class="flex items-center select-none">
               <input type="checkbox" id="no-bowel-today" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 custom-checkbox mr-2"/>
               今天無排便
@@ -162,6 +153,18 @@
           <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm text-slate-800 dark:text-slate-200">
             <h3 class="text-base font-semibold mb-2">昨晚睡眠品質</h3>
             <div id="sleep-quality-rating" class="star-rating flex items-center justify-center space-x-2 text-4xl"></div>
+          </section>
+          
+          <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm text-slate-800 dark:text-slate-200">
+            <h3 class="text-base font-semibold mb-2">昨晚夜間起床次數</h3>
+            <div id="night-waking-options" class="option-button-group flex flex-wrap gap-2 justify-center">
+                <button type="button" class="option-button text-sm py-2 px-4 rounded-full border border-slate-200 dark:border-slate-600" data-value="0">0 次</button>
+                <button type="button" class="option-button text-sm py-2 px-4 rounded-full border border-slate-200 dark:border-slate-600" data-value="1">1 次</button>
+                <button type="button" class="option-button text-sm py-2 px-4 rounded-full border border-slate-200 dark:border-slate-600" data-value="2">2 次</button>
+                <button type="button" class="option-button text-sm py-2 px-4 rounded-full border border-slate-200 dark:border-slate-600" data-value="3">3 次</button>
+                <button type="button" class="option-button text-sm py-2 px-4 rounded-full border border-slate-200 dark:border-slate-600" data-value="4">4 次</button>
+                <button type="button" class="option-button text-sm py-2 px-4 rounded-full border border-slate-200 dark:border-slate-600" data-value="5">5+ 次</button>
+            </div>
           </section>
 
           <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm text-slate-800 dark:text-slate-200">
@@ -208,24 +211,30 @@
         <section id="bowel-analysis-section" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200"></section>
         <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
           <h3 class="text-lg font-semibold">昨晚睡眠品質趨勢</h3>
-          <div class="relative h-64 md:h-80"><canvas id="sleep-chart"></canvas></div>
+          <div class="relative h-64 md:h-80"><canvas id="sleep-chart" class="chart-canvas"></canvas></div>
           <div id="stats-summary-sleep" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
+        </section>
+         <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
+          <h3 class="text-lg font-semibold">夜間起床次數</h3>
+          <div class="relative h-64 md:h-80"><canvas id="night-waking-chart" class="chart-canvas"></canvas></div>
+          <div id="stats-summary-night-waking" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
         </section>
         <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
           <h3 class="text-lg font-semibold">排便時間點分佈</h3>
-          <div class="relative h-64 md:h-80"><canvas id="bowel-time-chart"></canvas></div>
+          <div class="relative h-64 md:h-80"><canvas id="bowel-time-chart" class="chart-canvas"></canvas></div>
         </section>
         <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
           <h3 class="text-lg font-semibold">排便類型趨勢</h3>
-          <div class="relative h-64 md:h-80"><canvas id="bowel-chart"></canvas></div>
+          <div class="relative h-64 md:h-80"><canvas id="bowel-chart" class="chart-canvas"></canvas></div>
           <div id="stats-summary-bowel" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
         </section>
         <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
           <h3 class="text-lg font-semibold">RBD 症狀統計</h3>
-          <div class="relative h-64 md:h-80"><canvas id="rbd-chart"></canvas></div>
+          <div class="relative h-64 md:h-80"><canvas id="rbd-chart" class="chart-canvas"></canvas></div>
           <div id="stats-summary-rbd" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
         </section>
         <section id="health-tips-section" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-3 text-slate-800 dark:text-slate-200"></section>
+        <!-- 已移除匯出 PDF 按鈕區塊 -->
       </div>
 
       <!-- ========= 歷史頁 ========= -->
@@ -242,6 +251,7 @@
               匯入 CSV
             </button>
           </div>
+          <p id="last-backup-time" class="text-xs text-center text-slate-500 dark:text-slate-400 mb-4"></p>
           <input type="file" id="import-file-input" class="hidden" accept=".csv, text/csv"/>
           <h2 class="text-lg font-semibold mb-4 mt-6">所有日誌紀錄</h2>
           <div id="history-list" class="space-y-3"></div>
@@ -249,10 +259,8 @@
       </div>
     </main>
 
-    <!-- REMOVED Bottom Nav -->
-
     <!-- 確認 Modal -->
-    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+    <div id="confirmation-modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
       <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 max-w-sm w-full">
         <h3 id="modal-title" class="text-lg font-bold text-slate-800 dark:text-slate-200 mb-2">確認操作</h3>
         <p id="modal-message" class="text-sm text-slate-600 dark:text-slate-400 mb-6">您確定要執行此操作嗎？</p>
@@ -262,6 +270,18 @@
         </div>
       </div>
     </div>
+    
+    <!-- 圖表點擊詳細資料 Modal -->
+    <div id="log-detail-modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-5 max-w-sm w-full max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="log-detail-title" class="text-lg font-bold text-slate-800 dark:text-slate-200">該日詳細紀錄</h3>
+                <button id="log-detail-close-btn" class="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">&times;</button>
+            </div>
+            <div id="log-detail-content" class="text-sm text-slate-700 dark:text-slate-300 space-y-3"></div>
+        </div>
+    </div>
+
   </div>
 
   <script>
@@ -299,14 +319,13 @@
       dailyLogs: {},
       currentDate: dayjs().format('YYYY-MM-DD'),
       currentPage: 'log-page',
-      charts: { bowel: null, rbd: null, bowelTime: null, sleep: null },
+      charts: { bowel: null, rbd: null, bowelTime: null, sleep: null, nightWaking: null },
       statsWeekOffset: 0,
-      isFullscreen: false,
     };
 
     const DOM = {
-      app: document.getElementById('app'), // NEW
-      appHeaderTop: document.getElementById('app-header-top'), // NEW
+      app: document.getElementById('app'),
+      appHeaderTop: document.getElementById('app-header-top'),
       appNav: document.getElementById('app-nav'),
       html: document.documentElement,
       headerTitle: document.getElementById('header-title'),
@@ -317,7 +336,9 @@
       noBowelToday: document.getElementById('no-bowel-today'),
       bowelRecordsContainer: document.getElementById('bowel-records-container'),
       addBowelRecordBtn: document.getElementById('add-bowel-record-btn'),
+      dailyBowelSummary: document.getElementById('daily-bowel-summary'),
       sleepQualityRating: document.getElementById('sleep-quality-rating'),
+      nightWakingOptions: document.getElementById('night-waking-options'),
       rbdSymptoms: document.getElementById('rbd-symptoms'),
       rbdOtherNotes: document.getElementById('rbd-other-notes'),
       medicationLog: document.getElementById('medication-log'),
@@ -327,15 +348,18 @@
       statsPage: document.getElementById('stats-page'), 
       aiInsightText: document.getElementById('ai-insight-text'), 
       historyList: document.getElementById('history-list'),
+      lastBackupTime: document.getElementById('last-backup-time'),
       statsWeekTitle: document.getElementById('stats-week-title'),
       prevWeekBtn: document.getElementById('prev-week-btn'),
       nextWeekBtn: document.getElementById('next-week-btn'),
       bowelAnalysisSection: document.getElementById('bowel-analysis-section'),
       sleepChartCanvas: document.getElementById('sleep-chart'),
+      nightWakingChartCanvas: document.getElementById('night-waking-chart'),
       bowelTimeChartCanvas: document.getElementById('bowel-time-chart'),
       bowelChartCanvas: document.getElementById('bowel-chart'),
       rbdChartCanvas: document.getElementById('rbd-chart'),
       statsSummarySleep: document.getElementById('stats-summary-sleep'),
+      statsSummaryNightWaking: document.getElementById('stats-summary-night-waking'),
       statsSummaryBowel: document.getElementById('stats-summary-bowel'),
       statsSummaryRbd: document.getElementById('stats-summary-rbd'),
       healthTipsSection: document.getElementById('health-tips-section'),
@@ -347,12 +371,13 @@
       modalMessage: document.getElementById('modal-message'),
       modalCancelBtn: document.getElementById('modal-cancel-btn'),
       modalConfirmBtn: document.getElementById('modal-confirm-btn'),
+      logDetailModal: document.getElementById('log-detail-modal'),
+      logDetailTitle: document.getElementById('log-detail-title'),
+      logDetailContent: document.getElementById('log-detail-content'),
+      logDetailCloseBtn: document.getElementById('log-detail-close-btn'),
       themeToggle: document.getElementById('theme-toggle'),
       themeIconSun: document.getElementById('theme-icon-sun'),
       themeIconMoon: document.getElementById('theme-icon-moon'),
-      fullscreenToggle: document.getElementById('fullscreen-toggle'),
-      iconMaximize: document.getElementById('icon-maximize'),
-      iconMinimize: document.getElementById('icon-minimize'),
     };
 
     function cleanInvisible(str) {
@@ -380,10 +405,10 @@
 
     function setupPWA() {
         const manifest = {
-            "name": "Uma健康日誌", "short_name": "健康日誌", "start_url": ".",
+            "name": "健康日誌", "short_name": "健康日誌", "start_url": ".",
             "display": "standalone", "background_color": "#f8fafc", "theme_color": "#3B82F6",
             "description": "您的個人化健康與排便日誌。",
-            "icons": [{"src": "https://placehold.co/192x192/3B82F6/FFFFFF?text=Uma", "sizes": "192x192", "type": "image/png"}, {"src": "https://placehold.co/512x512/3B82F6/FFFFFF?text=Uma", "sizes": "512x512", "type": "image/png"}]
+            "icons": [{"src": "https://placehold.co/192x192/3B82F6/FFFFFF?text=Log", "sizes": "192x192", "type": "image/png"}, {"src": "https://placehold.co/512x512/3B82F6/FFFFFF?text=Log", "sizes": "512x512", "type": "image/png"}]
         };
         const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
         const manifestURL = URL.createObjectURL(manifestBlob);
@@ -406,7 +431,7 @@
     }
 
     function getEmptyLog() {
-      return { noBowel: false, bowel: [], sleep: 0, rbd: { symptoms: [], other: '' }, meds: '', dailyNotes: '' };
+      return { noBowel: false, bowel: [], sleep: 0, nightWakings: -1, rbd: { symptoms: [], other: '' }, meds: '', dailyNotes: '' };
     }
     function getEmptyBowelRecord() {
       return { id: Date.now(), bowelTimeOfDay: '', types: [], color: '', volume: '', duration: '', notes: '', symptoms: [], additionalStatus: [] };
@@ -417,7 +442,13 @@
       DOM.noBowelToday.checked = log.noBowel;
       toggleBowelSection(log.noBowel);
       renderBowelForms(log.bowel);
+      updateDailyBowelSummary();
       updateStars(log.sleep);
+      
+      DOM.nightWakingOptions.querySelectorAll('.option-button').forEach(btn => {
+        btn.classList.toggle('selected', parseInt(btn.dataset.value) === log.nightWakings);
+      });
+
       const rbdCheckboxes = DOM.rbdSymptoms.querySelectorAll('input[type="checkbox"]');
       rbdCheckboxes.forEach(input => {
         input.checked = log.rbd.symptoms.includes(input.id);
@@ -453,10 +484,13 @@
             });
         });
         const bowelRecords = bowelRecordsRaw.filter(r => r.types.length > 0);
+        const selectedNightWaking = DOM.nightWakingOptions.querySelector('.option-button.selected');
+
         appState.dailyLogs[date] = {
             noBowel: DOM.noBowelToday.checked,
             bowel: DOM.noBowelToday.checked ? [] : bowelRecords,
             sleep: DOM.sleepQualityRating.querySelectorAll('.star.selected').length,
+            nightWakings: selectedNightWaking ? parseInt(selectedNightWaking.dataset.value) : -1,
             rbd: {
                 symptoms: Array.from(document.querySelectorAll('#rbd-symptoms input:checked')).map(el => el.id),
                 other: DOM.rbdOtherNotes.value
@@ -488,27 +522,50 @@
       records.forEach((record, index) => DOM.bowelRecordsContainer.insertAdjacentHTML('beforeend', createBowelFormHTML(record, index + 1)));
     }
     function createBowelFormHTML(record, index) {
-      return `<div class="bowel-record-form border-t-2 border-slate-200 dark:border-slate-700 pt-4" data-id="${record.id}"><div class="flex justify-between items-center mb-3"><h4 class="font-semibold text-md text-slate-700 dark:text-slate-300">第 ${index} 筆紀錄</h4>${index > 1 ? `<button class="remove-bowel-record-btn text-sm font-medium text-red-500 hover:text-red-700">刪除此筆</button>` : ''}</div><div class="form-section border-slate-200 dark:border-slate-700"><div class="grid grid-cols-3 gap-2">${bristolData.map(item => `<div class="bristol-item p-2 rounded-lg border-2 border-slate-200 dark:border-slate-600 cursor-pointer text-center flex flex-col justify-start ${record.types.includes(item.type) ? 'bristol-selected' : ''}" data-type="${item.type}" tabindex="0"><svg viewBox="0 0 24 18" class="w-12 h-8 mx-auto mb-1">${item.svg}</svg><p class="font-semibold text-xs text-slate-800 dark:text-slate-200">類型 ${item.type}</p><p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">${item.d}</p></div>`).join('')}</div></div><div class="space-y-3 mt-3"><div class="form-section border-slate-200 dark:border-slate-700"><label class="form-section-label text-slate-600 dark:text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clip-rule="evenodd"/></svg>排便時間點</label><input type="time" class="bowel-time-of-day w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 rounded-md" value="${record.bowelTimeOfDay || ''}"></div><div class="form-section border-slate-200 dark:border-slate-700"><label class="form-section-label text-slate-600 dark:text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 2zM10 15a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 15zM10 7a3 3 0 100 6 3 3 0 000-6z"/></svg>顏色</label><div class="color-options grid grid-cols-3 gap-2">${bowelColorData.map(color => `<div class="color-item p-2 rounded-lg border-2 border-slate-200 dark:border-slate-600 cursor-pointer text-center flex flex-col items-center justify-center ${record.color === color.name ? 'bristol-selected' : ''}" data-value="${color.name}"><svg viewBox="0 0 24 24" class="w-10 h-10 mb-1 ${color.colorClass}"><path d="M18,10c0,4-1.8,5-6,5s-6-1-6-5c0-2,1-5,6-5S18,8,18,10Z M17,14c0,2-1,3-5,3s-5-1-5-3c0-1,0-2,1-3c1.5-1.5,3.5-1.5,4-1.5s2.5,0,4,1.5C17,12,17,13,17,14Z M15,17c0,1-1,1.5-3,1.5s-3-.5-3-1.5c0,0,1-1,3-1S15,17,15,17Z"/></svg><p class="text-xs text-slate-600 dark:text-slate-400">${color.name}</p></div>`).join('')}</div></div><div class="grid grid-cols-2 gap-3">${createOptionGroup('排便量', 'volume-options', bowelVolumes, record.volume, false)}${createOptionGroup('排便耗時', 'duration-options', bowelDurations, record.duration, false)}</div>${createOptionGroup('症狀', 'symptoms-options', bowelSymptoms, record.symptoms, true)}${createOptionGroup('附加狀態', 'status-options', bowelAdditionalStatus, record.additionalStatus, true)}<div class="form-section border-slate-200 dark:border-slate-700"><label class="form-section-label text-slate-600 dark:text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M5.433 13.917l1.262-3.155A4 4 0 017.58 9.42l6.92-6.918a2.121 2.121 0 013 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 01-.65-.65z"/><path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0010 3H4.75A2.75 2.75 0 002 5.75v9.5A2.75 2.75 0 004.75 18h9.5A2.75 2.75 0 0017 15.25V10a.75.75 0 00-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5z"/></svg>備註</label><textarea class="bowel-notes w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 rounded-md">${record.notes || ''}</textarea></div></div></div>`;
+      return `<div class="bowel-record-form border-t-2 border-slate-200 dark:border-slate-700 pt-4" data-id="${record.id}"><div class="flex justify-between items-center mb-3"><h4 class="font-semibold text-md text-slate-700 dark:text-slate-300">第 ${index} 筆紀錄</h4><button class="remove-bowel-record-btn text-sm font-medium text-red-500 hover:text-red-700">刪除此筆</button></div><div class="form-section border-slate-200 dark:border-slate-700"><div class="grid grid-cols-3 gap-2">${bristolData.map(item => `<div class="bristol-item p-2 rounded-lg border-2 border-slate-200 dark:border-slate-600 cursor-pointer text-center flex flex-col justify-start ${record.types.includes(item.type) ? 'bristol-selected' : ''}" data-type="${item.type}" tabindex="0"><svg viewBox="0 0 24 18" class="w-12 h-8 mx-auto mb-1">${item.svg}</svg><p class="font-semibold text-xs text-slate-800 dark:text-slate-200">類型 ${item.type}</p><p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">${item.d}</p></div>`).join('')}</div></div><div class="space-y-3 mt-3"><div class="form-section border-slate-200 dark:border-slate-700"><label class="form-section-label text-slate-600 dark:text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clip-rule="evenodd"/></svg>排便時間點</label><input type="time" class="bowel-time-of-day w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 rounded-md" value="${record.bowelTimeOfDay || ''}"></div><div class="form-section border-slate-200 dark:border-slate-700"><label class="form-section-label text-slate-600 dark:text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 2zM10 15a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 15zM10 7a3 3 0 100 6 3 3 0 000-6z"/></svg>顏色</label><div class="color-options grid grid-cols-3 gap-2">${bowelColorData.map(color => `<div class="color-item p-2 rounded-lg border-2 border-slate-200 dark:border-slate-600 cursor-pointer text-center flex flex-col items-center justify-center ${record.color === color.name ? 'bristol-selected' : ''}" data-value="${color.name}"><svg viewBox="0 0 24 24" class="w-10 h-10 mb-1 ${color.colorClass}"><path d="M18,10c0,4-1.8,5-6,5s-6-1-6-5c0-2,1-5,6-5S18,8,18,10Z M17,14c0,2-1,3-5,3s-5-1-5-3c0-1,0-2,1-3c1.5-1.5,3.5-1.5,4-1.5s2.5,0,4,1.5C17,12,17,13,17,14Z M15,17c0,1-1,1.5-3,1.5s-3-.5-3-1.5c0,0,1-1,3-1S15,17,15,17Z"/></svg><p class="text-xs text-slate-600 dark:text-slate-400">${color.name}</p></div>`).join('')}</div></div><div class="grid grid-cols-2 gap-3">${createOptionGroup('排便量', 'volume-options', bowelVolumes, record.volume, false)}${createOptionGroup('排便耗時', 'duration-options', bowelDurations, record.duration, false)}</div>${createOptionGroup('症狀', 'symptoms-options', bowelSymptoms, record.symptoms, true)}${createOptionGroup('附加狀態', 'status-options', bowelAdditionalStatus, record.additionalStatus, true)}<div class="form-section border-slate-200 dark:border-slate-700"><label class="form-section-label text-slate-600 dark:text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M5.433 13.917l1.262-3.155A4 4 0 017.58 9.42l6.92-6.918a2.121 2.121 0 013 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 01-.65-.65z"/><path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0010 3H4.75A2.75 2.75 0 002 5.75v9.5A2.75 2.75 0 004.75 18h9.5A2.75 2.75 0 0017 15.25V10a.75.75 0 00-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5z"/></svg>備註</label><textarea class="bowel-notes w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 rounded-md">${record.notes || ''}</textarea></div></div></div>`;
     }
     function createOptionGroup(label, className, options, selectedValues, isMultiSelect) {
       const groupClass = isMultiSelect ? `option-button-group ${className} multi-select-group flex flex-wrap gap-2` : `option-button-group ${className} flex flex-wrap gap-2`;
       const buttons = options.map(opt => `<button type="button" class="option-button text-sm py-1 px-3 rounded-full border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 ${(Array.isArray(selectedValues) ? selectedValues.includes(opt) : opt === selectedValues) ? 'selected' : ''}" data-value="${opt}">${opt}</button>`).join('');
       return `<div class="form-section border-slate-200 dark:border-slate-700"><label class="form-section-label text-sm text-slate-600 dark:text-slate-400">${label}</label><div class="${groupClass}">${buttons}</div></div>`;
     }
+    
     function renderHistoryList() {
-      const sortedDates = Object.keys(appState.dailyLogs).sort().reverse();
-      if (sortedDates.length === 0) {
-        DOM.historyList.innerHTML = `<p class="text-center text-slate-500 dark:text-slate-400 py-8">目前沒有任何日誌紀錄。</p>`;
-        return;
-      }
-      DOM.historyList.innerHTML = sortedDates.map(date => {
-        const log = appState.dailyLogs[date];
-        const sleep = log.sleep > 0 ? `${'★'.repeat(log.sleep)}${'☆'.repeat(5 - log.sleep)}` : '未記錄';
-        const rbdText = log.rbd.symptoms.length > 0 ? log.rbd.symptoms.map(id => rbdSymptomsList.find(s => s.id === id)?.label || '').join(', ') : '無';
-        const bowelDetails = (b) => [Array.isArray(b.symptoms) ? b.symptoms.join(', ') : '', Array.isArray(b.additionalStatus) ? b.additionalStatus.join(', ') : ''].filter(Boolean).join('; ');
-        return `<div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700"><div class="flex justify-between items-center mb-3"><p class="font-bold text-lg text-slate-800 dark:text-slate-200">${dayjs(date).format('YYYY年M月D日')}</p><button class="edit-log-btn text-sm text-blue-600 hover:underline" data-date="${date}">查看/編輯</button></div><div class="text-sm text-slate-700 dark:text-slate-300 space-y-2"><p><b class="font-semibold">睡眠:</b> ${sleep}</p><div><b class="font-semibold">排便紀錄:</b> ${log.noBowel ? '<span class="text-slate-500 dark:text-slate-400">當日無排便</span>' : (log.bowel && log.bowel.length > 0 ? `<ul class="list-disc list-inside pl-2 mt-1 text-xs space-y-1">${log.bowel.map(b => `<li>${b.bowelTimeOfDay ? `<b>${b.bowelTimeOfDay}</b> - ` : ''}類型 ${Array.isArray(b.types) && b.types.length ? b.types.join(', ') : '?'} (${b.color || 'N/A'}, ${b.volume || 'N/A'}, ${b.duration || 'N/A'})<br><span class="text-slate-500 dark:text-slate-400 pl-4 text-[11px]">${bowelDetails(b)}</span></li>`).join('')}</ul>` : '<span class="text-slate-500 dark:text-slate-400">未記錄</span>')}</div><div><b class="font-semibold">RBD 症狀:</b> <span class="text-xs">${rbdText}</span></div></div></div>`;
-      }).join('');
+        const sortedDates = Object.keys(appState.dailyLogs).sort().reverse();
+        DOM.lastBackupTime.textContent = localStorage.getItem('healthLogBackupTime') ? `上次備份時間：${dayjs(parseInt(localStorage.getItem('healthLogBackupTime'))).format('YYYY/MM/DD HH:mm')}` : '尚未備份過資料。';
+
+        if (sortedDates.length === 0) {
+            DOM.historyList.innerHTML = `<p class="text-center text-slate-500 dark:text-slate-400 py-8">目前沒有任何日誌紀錄。</p>`;
+            return;
+        }
+        DOM.historyList.innerHTML = sortedDates.map(date => {
+            const log = appState.dailyLogs[date];
+            const sleep = log.sleep > 0 ? `${'★'.repeat(log.sleep)}${'☆'.repeat(5 - log.sleep)}` : '未記錄';
+            const nightWakingsText = (log.nightWakings >= 0) ? `${log.nightWakings}${log.nightWakings === 5 ? '+' : ''} 次` : '未記錄';
+            const rbdText = log.rbd.symptoms.length > 0 ? log.rbd.symptoms.map(id => rbdSymptomsList.find(s => s.id === id)?.label || '').join(', ') : '無';
+            
+            const bowelSummary = log.noBowel ? '<span class="text-slate-500 dark:text-slate-400">當日無排便</span>' : 
+                (log.bowel && log.bowel.length > 0 ? 
+                    `<ul class="list-none pl-1 text-xs space-y-1">${log.bowel.map(b => `<li>${b.bowelTimeOfDay ? `<b>${b.bowelTimeOfDay}</b> - ` : ''}類型 ${Array.isArray(b.types) && b.types.length ? b.types.join(',') : '?'} (${b.color||'N/A'})</li>`).join('')}</ul>` 
+                    : '<span class="text-slate-500 dark:text-slate-400">未記錄</span>');
+
+            return `<div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                <div class="flex justify-between items-center mb-3">
+                    <p class="font-bold text-lg text-slate-800 dark:text-slate-200">${dayjs(date).format('YYYY年M月D日')}</p>
+                    <button class="edit-log-btn text-sm text-blue-600 hover:underline" data-date="${date}">查看/編輯</button>
+                </div>
+                <div class="text-sm text-slate-700 dark:text-slate-300 space-y-2">
+                    <ul class="list-none pl-0 space-y-1">
+                        <li><span class="inline-block w-6">🛌</span> 睡眠: ${sleep}</li>
+                        <li><span class="inline-block w-6">🌙</span> 夜間起床: ${nightWakingsText}</li>
+                        <li class="flex items-start"><span class="inline-block w-6 pt-0.5">💩</span> <div class="flex-1">排便紀錄: ${bowelSummary}</div></li>
+                        <li><span class="inline-block w-6">😴</span> RBD 症狀: ${rbdText}</li>
+                    </ul>
+                </div>
+            </div>`;
+        }).join('');
     }
+
 
     function getChartColors() {
       const isDarkMode = DOM.html.classList.contains('dark');
@@ -523,14 +580,15 @@
       const weekData = getWeekData(weekStart); 
       generateHealthInsights(weekData); 
       updateBowelAnalysis(weekStart);
-      updateSleepChart(weekStart, weekData);
-      updateBowelTimeChart(weekStart, weekData);
-      updateBowelChart(weekStart, weekData);
-      updateRbdChart(weekStart, weekData);
+      updateSleepChart(weekData);
+      updateNightWakingChart(weekData);
+      updateBowelTimeChart(weekData);
+      updateBowelChart(weekData);
+      updateRbdChart(weekData);
     }
 
     function getWeekData(weekStart) {
-        const data = { labels: [], sleep: [], bowel: [], bowelCount: [], rbd: [], dates: [] };
+        const data = { labels: [], sleep: [], nightWakings: [], bowel: [], bowelCount: [], rbd: [], dates: [] };
         for (let i = 0; i < 7; i++) {
             const date = weekStart.add(i, 'day');
             const dateStr = date.format('YYYY-MM-DD');
@@ -538,6 +596,7 @@
             data.labels.push(date.format('M/D'));
             data.dates.push(dateStr);
             data.sleep.push(log ? log.sleep : null);
+            data.nightWakings.push(log && log.nightWakings >= 0 ? log.nightWakings : null);
             data.bowel.push(log && log.bowel && log.bowel.length > 0 ? log.bowel.flatMap(b => b.types) : null);
             data.bowelCount.push(log && log.bowel ? log.bowel.length : 0);
             data.rbd.push(log && log.rbd && log.rbd.symptoms.length > 0 && !log.rbd.symptoms.includes('none') ? log.rbd.symptoms.length : 0);
@@ -549,12 +608,13 @@
         const insights = [];
         const validSleep = weekData.sleep.filter(s => s > 0);
         const avgSleep = validSleep.length > 0 ? validSleep.reduce((a, b) => a + b, 0) / validSleep.length : 0;
+        const validWakings = weekData.nightWakings.filter(w => w !== null);
+        const avgWakings = validWakings.length > 0 ? validWakings.reduce((a,b) => a+b, 0) / validWakings.length : 0;
         const allBowelTypes = weekData.bowel.flat().filter(b => b !== null);
         const avgBowel = allBowelTypes.length > 0 ? allBowelTypes.reduce((a, b) => a + b, 0) / allBowelTypes.length : 0;
-        const totalBMs = weekData.bowelCount.reduce((acc, count) => acc + count, 0);
-        const avgBMsPerDay = totalBMs / 7;
-        if (validSleep.length > 0 || totalBMs > 0) {
-            let summary = `本週平均睡眠品質為 ${avgSleep.toFixed(1)} 顆星，平均排便類型為 ${avgBowel.toFixed(1)} 型，每日平均排便 ${avgBMsPerDay.toFixed(1)} 次。`;
+        
+        if (validSleep.length > 0 || allBowelTypes.length > 0 || validWakings.length > 0) {
+            let summary = `本週平均睡眠品質為 ${avgSleep.toFixed(1)} 顆星，夜間平均起床 ${avgWakings.toFixed(1)} 次，平均排便類型為 ${avgBowel.toFixed(1)} 型。`;
             insights.push(summary);
         } else {
             insights.push('本週尚無足夠數據來產生洞察。');
@@ -602,14 +662,59 @@
       const weekLabel = appState.statsWeekOffset === 0 ? '本週' : '該週';
       DOM.bowelAnalysisSection.innerHTML = `<h3 class="text-lg font-semibold">排便分析</h3><p class="text-sm text-slate-600 dark:text-slate-400"><b>上一次排便：</b> ${lastBM ? lastBM.fromNow() : '無紀錄'}</p><div class="grid grid-cols-2 gap-4 text-center"><div class="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p class="text-2xl font-bold">${currentWeekStats.totalBMs} <span class="text-sm font-normal">次</span></p><p class="text-xs text-slate-500 dark:text-slate-400">${weekLabel}</p><p class="text-xs text-slate-500 dark:text-slate-400 mt-1">相較於前7天的 ${previousWeekStats.totalBMs} 次</p></div><div class="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p class="text-2xl font-bold">${goodBMPercent}<span class="text-sm font-normal">%</span></p><p class="text-xs text-slate-500 dark:text-slate-400">${weekLabel}好大便</p><p class="text-xs text-slate-500 dark:text-slate-400 mt-1">相較於前7天的 ${prevGoodBMPercent}%</p></div></div>`;
     }
-    function updateSleepChart(weekStart, weekData) {
+    
+    function createChartClickHandler(weekData) {
+        return (evt) => {
+            const chartId = evt.chart.canvas.id.replace('-chart', '');
+            const chartInstance = appState.charts[chartId];
+            if (!chartInstance) return;
+            const points = chartInstance.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+            if (points.length) {
+                const firstPoint = points[0];
+                const date = weekData.dates[firstPoint.index];
+                showLogDetailModal(date);
+            }
+        };
+    }
+
+    function updateSleepChart(weekData) {
       const colors = getChartColors();
       if (appState.charts.sleep) appState.charts.sleep.destroy();
-      appState.charts.sleep = new Chart(DOM.sleepChartCanvas, { type: 'line', data: { labels: weekData.labels, datasets: [{ label: '睡眠品質', data: weekData.sleep, borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', fill: true, tension: 0.3, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 1, max: 5, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false } } } });
+      appState.charts.sleep = new Chart(DOM.sleepChartCanvas, { type: 'line', data: { labels: weekData.labels, datasets: [{ label: '睡眠品質', data: weekData.sleep, borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', fill: true, tension: 0.3, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 1, max: 5, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false } }, onClick: createChartClickHandler(weekData) } });
       const validRecords = weekData.sleep.filter(p => p !== null);
       DOM.statsSummarySleep.textContent = validRecords.length > 0 ? `本週平均睡眠品質為 ${(validRecords.reduce((a, b) => a + b, 0) / validRecords.length).toFixed(1)} 顆星。` : '本週沒有睡眠品質紀錄。';
     }
-    function updateBowelTimeChart(weekStart, weekData) {
+
+    function updateNightWakingChart(weekData) {
+        const colors = getChartColors();
+        if (appState.charts.nightWaking) appState.charts.nightWaking.destroy();
+        appState.charts.nightWaking = new Chart(DOM.nightWakingChartCanvas, {
+            type: 'bar',
+            data: {
+                labels: weekData.labels,
+                datasets: [{
+                    label: '夜間起床次數',
+                    data: weekData.nightWakings,
+                    backgroundColor: 'rgba(139, 92, 246, 0.6)',
+                    borderColor: 'rgba(139, 92, 246, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } },
+                    x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } }
+                },
+                plugins: { legend: { display: false } },
+                onClick: createChartClickHandler(weekData)
+            }
+        });
+        const validRecords = weekData.nightWakings.filter(w => w !== null);
+        DOM.statsSummaryNightWaking.textContent = validRecords.length > 0 ? `本週平均夜間起床 ${(validRecords.reduce((a, b) => a + b, 0) / validRecords.length).toFixed(1)} 次。` : '本週沒有夜間起床紀錄。';
+    }
+
+    function updateBowelTimeChart(weekData) {
       const colors = getChartColors();
       const datasets = [];
       weekData.dates.forEach((dateStr, i) => {
@@ -624,20 +729,20 @@
         }
       });
       if (appState.charts.bowelTime) appState.charts.bowelTime.destroy();
-      appState.charts.bowelTime = new Chart(DOM.bowelTimeChartCanvas, { type: 'scatter', data: { datasets: [{ label: '排便時間', data: datasets, backgroundColor: 'rgba(59, 130, 246, 0.7)', pointRadius: 6, pointHoverRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'linear', position: 'bottom', ticks: { color: colors.textColor, stepSize: 1, callback: (value) => weekData.labels[value] || '' }, grid: { display: false } }, y: { reverse: true, min: 0, max: 24, ticks: { color: colors.textColor, stepSize: 3, callback: (value) => `${String(value).padStart(2, '0')}:00` }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => { const d = c.dataset.data[c.dataIndex]; const h = Math.floor(d.y); const m = Math.round((d.y - h) * 60); return `時間: ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} (類型: ${d.types})`; } } } } } });
+      appState.charts.bowelTime = new Chart(DOM.bowelTimeChartCanvas, { type: 'scatter', data: { datasets: [{ label: '排便時間', data: datasets, backgroundColor: 'rgba(59, 130, 246, 0.7)', pointRadius: 6, pointHoverRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'linear', position: 'bottom', ticks: { color: colors.textColor, stepSize: 1, callback: (value) => weekData.labels[value] || '' }, grid: { display: false } }, y: { reverse: true, min: 0, max: 24, ticks: { color: colors.textColor, stepSize: 3, callback: (value) => `${String(value).padStart(2, '0')}:00` }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => { const d = c.dataset.data[c.dataIndex]; const h = Math.floor(d.y); const m = Math.round((d.y - h) * 60); return `時間: ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} (類型: ${d.types})`; } } } }, onClick: createChartClickHandler(weekData) } });
     }
-    function updateBowelChart(weekStart, weekData) {
+    function updateBowelChart(weekData) {
       const colors = getChartColors();
       const dataPoints = weekData.bowel.map(dayBowel => {
         if (dayBowel && dayBowel.length > 0) return dayBowel.reduce((a, b) => a + b, 0) / dayBowel.length;
         return null;
       });
       if (appState.charts.bowel) appState.charts.bowel.destroy();
-      appState.charts.bowel = new Chart(DOM.bowelChartCanvas, { type: 'line', data: { labels: weekData.labels, datasets: [{ label: '布里斯托分類', data: dataPoints, borderColor: '#3B82F6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.3, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 1, max: 7, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false } } } });
+      appState.charts.bowel = new Chart(DOM.bowelChartCanvas, { type: 'line', data: { labels: weekData.labels, datasets: [{ label: '布里斯托分類', data: dataPoints, borderColor: '#3B82F6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.3, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 1, max: 7, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false } }, onClick: createChartClickHandler(weekData) } });
       const validRecords = dataPoints.filter(p => p !== null);
       DOM.statsSummaryBowel.textContent = validRecords.length > 0 ? `本週平均類型為 ${(validRecords.reduce((a, b) => a + b, 0) / validRecords.length).toFixed(1)}。` : '本週沒有排便紀錄。';
     }
-    function updateRbdChart(weekStart, weekData) {
+    function updateRbdChart(weekData) {
       const colors = getChartColors();
       const rbdSymptomMap = rbdSymptomsList.reduce((acc, s) => ({...acc, [s.id]: s.label}), {});
       const tooltipLabels = weekData.dates.map(dateStr => {
@@ -648,22 +753,41 @@
           return '無症狀';
       });
       if (appState.charts.rbd) appState.charts.rbd.destroy();
-      appState.charts.rbd = new Chart(DOM.rbdChartCanvas, { type: 'bar', data: { labels: weekData.labels, datasets: [{ label: '症狀次數', data: weekData.rbd, backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: 'rgba(239, 68, 68, 1)', borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y} 次`, afterLabel: (c) => tooltipLabels[c.dataIndex] } } } } });
+      appState.charts.rbd = new Chart(DOM.rbdChartCanvas, { type: 'bar', data: { labels: weekData.labels, datasets: [{ label: '症狀次數', data: weekData.rbd, backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: 'rgba(239, 68, 68, 1)', borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y} 次`, afterLabel: (c) => tooltipLabels[c.dataIndex] } } }, onClick: createChartClickHandler(weekData) } });
       DOM.statsSummaryRbd.textContent = `本週共記錄 ${weekData.rbd.reduce((a, b) => a + b, 0)} 次RBD相關症狀。`;
     }
 
     function setupEventListeners() {
       DOM.logDate.addEventListener('change', e => { appState.currentDate = e.target.value; loadLogForDate(appState.currentDate); });
-      DOM.noBowelToday.addEventListener('change', e => toggleBowelSection(e.target.checked));
-      DOM.addBowelRecordBtn.addEventListener('click', () => DOM.bowelRecordsContainer.insertAdjacentHTML('beforeend', createBowelFormHTML(getEmptyBowelRecord(), DOM.bowelRecordsContainer.children.length + 1)));
+      DOM.noBowelToday.addEventListener('change', e => { toggleBowelSection(e.target.checked); updateDailyBowelSummary(); });
+      DOM.addBowelRecordBtn.addEventListener('click', () => { DOM.bowelRecordsContainer.insertAdjacentHTML('beforeend', createBowelFormHTML(getEmptyBowelRecord(), DOM.bowelRecordsContainer.children.length + 1)); updateDailyBowelSummary(); });
+      
       DOM.bowelRecordsContainer.addEventListener('click', e => {
         const t = e.target;
-        const bristolItem = t.closest('.bristol-item'); if (bristolItem) bristolItem.classList.toggle('bristol-selected');
-        const colorItem = t.closest('.color-item'); if (colorItem) { const g = colorItem.closest('.color-options'); g.querySelectorAll('.color-item').forEach(i => i.classList.remove('bristol-selected')); colorItem.classList.add('bristol-selected'); }
-        const optionButton = t.closest('.option-button'); if (optionButton) { const g = optionButton.closest('.option-button-group'); if (g.classList.contains('multi-select-group')) { if (optionButton.dataset.value === '無') { g.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected')); optionButton.classList.add('selected'); } else { const n = g.querySelector('[data-value="無"]'); if (n) n.classList.remove('selected'); optionButton.classList.toggle('selected'); } } else { g.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected')); optionButton.classList.add('selected'); } }
-        if (t.classList.contains('remove-bowel-record-btn')) { t.closest('.bowel-record-form').remove(); DOM.bowelRecordsContainer.querySelectorAll('h4').forEach((h, i) => h.textContent = `第 ${i + 1} 筆紀錄`); }
+        let summaryNeedsUpdate = false;
+        const bristolItem = t.closest('.bristol-item'); if (bristolItem) { bristolItem.classList.toggle('bristol-selected'); summaryNeedsUpdate = true; }
+        const colorItem = t.closest('.color-item'); if (colorItem) { const g = colorItem.closest('.color-options'); g.querySelectorAll('.color-item').forEach(i => i.classList.remove('bristol-selected')); colorItem.classList.add('bristol-selected'); summaryNeedsUpdate = true; }
+        const optionButton = t.closest('.option-button'); if (optionButton) { const g = optionButton.closest('.option-button-group'); if (g.classList.contains('multi-select-group')) { if (optionButton.dataset.value === '無') { g.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected')); optionButton.classList.add('selected'); } else { const n = g.querySelector('[data-value="無"]'); if (n) n.classList.remove('selected'); optionButton.classList.toggle('selected'); } } else { g.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected')); optionButton.classList.add('selected'); } summaryNeedsUpdate = true; }
+        
+        if (t.classList.contains('remove-bowel-record-btn')) {
+            const formToRemove = t.closest('.bowel-record-form');
+            showConfirmation('您確定要刪除這筆排便紀錄嗎？此操作無法復原。', () => {
+                formToRemove.remove();
+                DOM.bowelRecordsContainer.querySelectorAll('h4').forEach((h, i) => h.textContent = `第 ${i + 1} 筆紀錄`);
+                updateDailyBowelSummary();
+            });
+        }
+        if (summaryNeedsUpdate) updateDailyBowelSummary();
       });
+
       DOM.sleepQualityRating.addEventListener('click', e => { if (e.target.classList.contains('star')) updateStars(e.target.dataset.value); });
+      DOM.nightWakingOptions.addEventListener('click', e => {
+        const button = e.target.closest('.option-button');
+        if (button) {
+            DOM.nightWakingOptions.querySelectorAll('.option-button').forEach(btn => btn.classList.remove('selected'));
+            button.classList.add('selected');
+        }
+      });
       DOM.rbdSymptoms.addEventListener('change', () => { const o = DOM.rbdSymptoms.querySelector('#other'); updateRbdCheckboxStates(); DOM.rbdOtherNotes.classList.toggle('hidden', !o.checked); if (!o.checked) DOM.rbdOtherNotes.value = ''; });
       DOM.saveLogButton.addEventListener('click', () => saveLogForDate(appState.currentDate));
       DOM.navItems.forEach(item => item.addEventListener('click', () => { triggerHapticFeedback(30); navigateTo(item.dataset.page); }));
@@ -674,8 +798,10 @@
       DOM.importCsvBtn.addEventListener('click', () => DOM.importFileInput.click());
       DOM.importFileInput.addEventListener('change', importData);
       DOM.themeToggle.addEventListener('click', toggleTheme);
-      DOM.fullscreenToggle.addEventListener('click', toggleFullscreen);
       DOM.modalCancelBtn.addEventListener('click', () => DOM.confirmationModal.classList.add('hidden'));
+      DOM.logDetailCloseBtn.addEventListener('click', () => DOM.logDetailModal.classList.add('hidden'));
+      
+      // 已移除 PDF 按鈕的事件監聽器
     }
 
     function setupGestureListeners() {
@@ -693,8 +819,8 @@
     function navigateTo(pageId) {
       appState.currentPage = pageId;
       DOM.pages.forEach(p => p.classList.toggle('active', p.id === pageId));
-      const titles = { 'log-page': 'Uma健康日誌', 'stats-page': '統計圖表', 'history-page': '歷史紀錄' };
-      DOM.headerTitle.textContent = titles[pageId] || 'Uma健康日誌';
+      const titles = { 'log-page': '健康日誌', 'stats-page': '統計圖表', 'history-page': '歷史紀錄' };
+      DOM.headerTitle.textContent = titles[pageId] || '健康日誌';
       DOM.navItems.forEach(item => item.classList.toggle('active', item.dataset.page === pageId));
       if (pageId === 'history-page') renderHistoryList();
       else if (pageId === 'stats-page') { appState.statsWeekOffset = 0; updateCharts(); }
@@ -729,6 +855,33 @@
         DOM.modalConfirmBtn = document.getElementById('modal-confirm-btn');
         DOM.modalConfirmBtn.addEventListener('click', confirmHandler, { once: true });
     }
+    
+    function showLogDetailModal(date) {
+        const log = appState.dailyLogs[date];
+        DOM.logDetailTitle.textContent = `${dayjs(date).format('YYYY/MM/DD')} 詳細紀錄`;
+        if (!log) {
+            DOM.logDetailContent.innerHTML = `<p class="text-center text-slate-500 dark:text-slate-400">該日無紀錄。</p>`;
+            DOM.logDetailModal.classList.remove('hidden');
+            return;
+        }
+        
+        const sleep = log.sleep > 0 ? `${'★'.repeat(log.sleep)}${'☆'.repeat(5 - log.sleep)}` : '未記錄';
+        const nightWakingsText = (log.nightWakings >= 0) ? `${log.nightWakings}${log.nightWakings === 5 ? '+' : ''} 次` : '未記錄';
+        const rbdText = log.rbd.symptoms.length > 0 ? log.rbd.symptoms.map(id => rbdSymptomsList.find(s => s.id === id)?.label || '').join(', ') : '無';
+        const bowelDetails = (b) => [Array.isArray(b.symptoms) ? b.symptoms.join(', ') : '', Array.isArray(b.additionalStatus) ? b.additionalStatus.join(', ') : ''].filter(Boolean).join('; ');
+
+        let contentHTML = `
+            <p><b>睡眠品質:</b> ${sleep}</p>
+            <p><b>夜間起床:</b> ${nightWakingsText}</p>
+            <div><b>排便紀錄:</b> ${log.noBowel ? '<span class="text-slate-500">當日無排便</span>' : (log.bowel && log.bowel.length > 0 ? `<ul class="list-disc list-inside pl-2 mt-1 text-xs space-y-1">${log.bowel.map(b => `<li>${b.bowelTimeOfDay ? `<b>${b.bowelTimeOfDay}</b> - ` : ''}類型 ${Array.isArray(b.types) && b.types.length ? b.types.join(',') : '?'} (${b.color || 'N/A'}, ${b.volume || 'N/A'}, ${b.duration || 'N/A'})<br><span class="text-slate-500 dark:text-slate-400 pl-4 text-[11px]">${bowelDetails(b)}</span></li>`).join('')}</ul>` : '<span class="text-slate-500">未記錄</span>')}</div>
+            <p><b>RBD 症狀:</b> ${rbdText}</p>
+            ${log.rbd.other ? `<p class="pl-4 text-xs text-slate-500"><b>RBD備註:</b> ${log.rbd.other}</p>` : ''}
+            ${log.meds ? `<p><b>用藥紀錄:</b> ${log.meds}</p>` : ''}
+            ${log.dailyNotes ? `<p><b>每日備註:</b> ${log.dailyNotes}</p>` : ''}
+        `;
+        DOM.logDetailContent.innerHTML = contentHTML;
+        DOM.logDetailModal.classList.remove('hidden');
+    }
 
     function setupTheme() {
       const savedTheme = localStorage.getItem('theme');
@@ -746,19 +899,11 @@
       DOM.themeIconMoon.classList.toggle('hidden', isDark);
       if (appState.currentPage === 'stats-page') updateCharts();
     }
-    
-    // MODIFIED: Fullscreen Toggle Function
-    function toggleFullscreen() {
-        appState.isFullscreen = !appState.isFullscreen;
-        DOM.app.classList.toggle('fullscreen-mode', appState.isFullscreen);
-        DOM.iconMaximize.classList.toggle('hidden', appState.isFullscreen);
-        DOM.iconMinimize.classList.toggle('hidden', !appState.isFullscreen);
-        triggerHapticFeedback(30);
-    }
 
     function validateLogForm() {
       const missing = [];
       if (DOM.sleepQualityRating.querySelectorAll('.star.selected').length === 0) missing.push('昨晚睡眠品質');
+      if (!DOM.nightWakingOptions.querySelector('.option-button.selected')) missing.push('夜間起床次數');
       if (document.querySelectorAll('#rbd-symptoms input:checked').length === 0) missing.push('RBD 症狀');
       if (!DOM.noBowelToday.checked) {
         const bowelForms = document.querySelectorAll('.bowel-record-form');
@@ -777,6 +922,38 @@
       if (missing.length > 0) { showToast(`請完成以下欄位：${missing.join('、')}`, 'error'); return false; }
       return true;
     }
+    
+    function updateDailyBowelSummary() {
+        const forms = DOM.bowelRecordsContainer.querySelectorAll('.bowel-record-form');
+        if (forms.length === 0 || DOM.noBowelToday.checked) {
+            DOM.dailyBowelSummary.textContent = '';
+            return;
+        }
+
+        const allTypes = [];
+        const colorCounts = {};
+        
+        forms.forEach(form => {
+            form.querySelectorAll('.bristol-item.bristol-selected').forEach(item => {
+                allTypes.push(parseInt(item.dataset.type));
+            });
+            const selectedColor = form.querySelector('.color-item.bristol-selected');
+            if (selectedColor) {
+                const color = selectedColor.dataset.value;
+                colorCounts[color] = (colorCounts[color] || 0) + 1;
+            }
+        });
+
+        if (allTypes.length === 0) {
+            DOM.dailyBowelSummary.textContent = '';
+            return;
+        }
+
+        const avgType = allTypes.reduce((a, b) => a + b, 0) / allTypes.length;
+        const mostFrequentColor = Object.keys(colorCounts).reduce((a, b) => colorCounts[a] > colorCounts[b] ? a : b, '');
+
+        DOM.dailyBowelSummary.textContent = `今日平均: 類型 ${avgType.toFixed(1)}, 主要顏色: ${mostFrequentColor || 'N/A'}`;
+    }
 
     function parseCsvRow(rowString) {
       const values = []; let currentVal = ''; let inQuotes = false;
@@ -789,24 +966,63 @@
       values.push(currentVal); return values;
     }
     function formatCsvCell(value) {
-        const strValue = String(value).replace(/"/g, '""');
+        const strValue = String(value === null || value === undefined ? '' : value).replace(/"/g, '""');
         if (strValue.includes(',') || strValue.includes('"') || strValue.includes('\n')) return `"${strValue}"`;
         return strValue;
     }
 
-    // MODIFIED: Reverted to simple export
     function exportDataAsCsv() {
-        const headers = ['date', 'noBowel', 'bowelRecords', 'sleep', 'rbdSymptoms', 'rbdOther', 'meds', 'dailyNotes'];
+        const headers = [
+            'date', 'sleep', 'nightWakings',
+            'bowelTimeOfDay', 'types', 'color', 'volume', 'duration', 'symptoms', 'additionalStatus', 'notes',
+            'rbdSymptoms', 'rbdOther',
+            'meds', 'dailyNotes'
+        ];
         const csvRows = [headers.join(',')];
+
         const sortedDates = Object.keys(appState.dailyLogs).sort();
         for (const date of sortedDates) {
             const log = appState.dailyLogs[date];
-            const row = [date, log.noBowel, JSON.stringify(log.bowel || []), log.sleep || 0, JSON.stringify(log.rbd ? log.rbd.symptoms : []), log.rbd ? log.rbd.other : '', log.meds || '', log.dailyNotes || ''].map(formatCsvCell).join(',');
-            csvRows.push(row);
+            const safeLog = { ...getEmptyLog(), ...log };
+            const safeRbd = safeLog.rbd || { symptoms: [], other: '' };
+
+            if (safeLog.bowel && safeLog.bowel.length > 0) {
+                safeLog.bowel.forEach(bowel => {
+                    csvRows.push([
+                        date,
+                        safeLog.sleep,
+                        safeLog.nightWakings >= 0 ? safeLog.nightWakings : '',
+                        bowel.bowelTimeOfDay || '',
+                        bowel.types ? bowel.types.join('/') : '',
+                        bowel.color || '',
+                        bowel.volume || '',
+                        bowel.duration || '',
+                        bowel.symptoms ? bowel.symptoms.join('/') : '',
+                        bowel.additionalStatus ? bowel.additionalStatus.join('/') : '',
+                        bowel.notes || '',
+                        safeRbd.symptoms ? safeRbd.symptoms.join('/') : '',
+                        safeRbd.other || '',
+                        safeLog.meds || '',
+                        safeLog.dailyNotes || ''
+                    ].map(formatCsvCell).join(','));
+                });
+            } else {
+                csvRows.push([
+                    date,
+                    safeLog.sleep,
+                    safeLog.nightWakings >= 0 ? safeLog.nightWakings : '',
+                    '', '', '', '', '', '', '', '',
+                    safeRbd.symptoms ? safeRbd.symptoms.join('/') : '',
+                    safeRbd.other || '',
+                    safeLog.meds || '',
+                    safeLog.dailyNotes || ''
+                ].map(formatCsvCell).join(','));
+            }
         }
+
         const csvString = csvRows.join('\n');
         const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' });
-        const fileName = `uma_health_log_${dayjs().format('YYYYMMDD_HHmmss')}.csv`;
+        const fileName = `health_log_${dayjs().format('YYYYMMDD_HHmmss')}.csv`;
         
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
@@ -816,6 +1032,9 @@
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        
+        localStorage.setItem('healthLogBackupTime', Date.now());
+        if (appState.currentPage === 'history-page') renderHistoryList();
         showToast('資料已開始下載！', 'success');
     }
 
@@ -825,25 +1044,71 @@
         reader.onload = (e) => {
             const lines = e.target.result.split('\n').filter(line => line.trim() !== '');
             if (lines.length < 2) { showToast('CSV 檔案為空或格式不正確。', 'error'); return; }
+            
             const headers = parseCsvRow(lines.shift()).map(cleanInvisible);
-            if (!['date', 'noBowel', 'bowelRecords', 'sleep'].every(h => headers.includes(h))) { showToast('CSV 檔案缺少必要的欄位。', 'error'); return; }
-            const importedLogs = {}; let errorCount = 0;
+            const requiredHeaders = ['date', 'sleep'];
+            if (!requiredHeaders.every(h => headers.includes(h))) {
+                showToast(`CSV 檔案缺少必要的欄位 (如: ${requiredHeaders.join(', ')})。`, 'error');
+                return;
+            }
+
+            const importedLogs = {}; 
+            let errorCount = 0; 
+            let errorMessages = [];
+
             lines.forEach((line, index) => {
                 try {
                     const values = parseCsvRow(line);
-                    const rowData = headers.reduce((obj, h, i) => ({...obj, [h]: values[i]}), {});
+                    const rowData = headers.reduce((obj, h, i) => ({...obj, [h]: values[i] || ''}), {});
                     const date = dayjs(rowData.date).format('YYYY-MM-DD');
-                    if (date === 'Invalid Date') throw new Error('Invalid date format');
-                    importedLogs[date] = {
-                        noBowel: rowData.noBowel === 'true', bowel: JSON.parse(rowData.bowelRecords || '[]'),
-                        sleep: parseInt(rowData.sleep, 10) || 0,
-                        rbd: { symptoms: JSON.parse(rowData.rbdSymptoms || '[]'), other: rowData.rbdOther || '' },
-                        meds: rowData.meds || '', dailyNotes: rowData.dailyNotes || ''
-                    };
-                } catch (err) { errorCount++; console.error(`無法解析第 ${index + 2} 行:`, err); }
+                    if (date === 'Invalid Date') throw new Error(`日期格式無效: "${rowData.date}"`);
+
+                    if (!importedLogs[date]) {
+                        importedLogs[date] = {
+                            bowel: [],
+                            noBowel: true,
+                            sleep: parseInt(rowData.sleep, 10) || 0,
+                            nightWakings: rowData.nightWakings ? parseInt(rowData.nightWakings, 10) : -1,
+                            rbd: {
+                                symptoms: rowData.rbdSymptoms ? rowData.rbdSymptoms.split('/').filter(s => s) : [],
+                                other: rowData.rbdOther || ''
+                            },
+                            meds: rowData.meds || '',
+                            dailyNotes: rowData.dailyNotes || ''
+                        };
+                    }
+
+                    if (rowData.bowelTimeOfDay || (rowData.types && rowData.types.length > 0)) {
+                        importedLogs[date].bowel.push({
+                            id: Date.now() + index,
+                            bowelTimeOfDay: rowData.bowelTimeOfDay,
+                            types: rowData.types ? rowData.types.split('/').map(Number) : [],
+                            color: rowData.color,
+                            volume: rowData.volume,
+                            duration: rowData.duration,
+                            symptoms: rowData.symptoms ? rowData.symptoms.split('/').filter(s => s) : [],
+                            additionalStatus: rowData.additionalStatus ? rowData.additionalStatus.split('/').filter(s => s) : [],
+                            notes: rowData.notes
+                        });
+                        importedLogs[date].noBowel = false;
+                    }
+
+                } catch (err) {
+                    errorCount++;
+                    if (errorMessages.length < 3) errorMessages.push(`第 ${index + 2} 行: ${err.message}`);
+                }
             });
-            if(errorCount > 0) showToast(`匯入完成，但有 ${errorCount} 行資料解析失敗。`, 'error');
-            showConfirmation(`成功解析 ${Object.keys(importedLogs).length} 筆紀錄。確定要匯入並覆蓋現有資料嗎？`, () => {
+
+            Object.values(importedLogs).forEach(log => {
+                log.noBowel = log.bowel.length === 0;
+            });
+
+            if (errorCount > 0) {
+                const detailedError = `匯入完成，但有 ${errorCount} 行資料解析失敗。\n常見錯誤:\n${errorMessages.join('\n')}`;
+                showToast(detailedError, 'error');
+            }
+
+            showConfirmation(`成功解析 ${Object.keys(importedLogs).length} 筆日誌。確定要匯入並覆蓋現有資料嗎？`, () => {
                 Object.assign(appState.dailyLogs, importedLogs);
                 saveData();
                 showToast('資料匯入成功！', 'success');
@@ -855,7 +1120,7 @@
         reader.readAsText(file);
         event.target.value = '';
     }
-
+    
     init();
   });
   </script>
