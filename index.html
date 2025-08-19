@@ -1,3 +1,77 @@
+📄 健康日誌應用程式交接文件
+日期： 2025年8月19日
+專案名稱： 健康日誌 (Health Log PWA)
+最終版本 ID： health_log_app_final_version
+
+1. 專案概述
+本專案旨在開發一款漸進式網路應用程式 (PWA)，協助使用者記錄每日的健康資訊，特別是與消化系統相關的排便狀況、睡眠品質、夜間如廁次數及 RBD 症狀。應用程式具備資料視覺化圖表、歷史紀錄查詢，並支援 CSV 格式的資料匯入與匯出功能。
+
+2. 開發歷程與重要決策
+本專案經過多次與使用者協作迭代，以下為關鍵的開發歷程與決策摘要：
+
+初期版本分析：
+
+針對使用者提供的初始程式碼進行分析，發現 CSV 匯出資料在 noBowel 與 nightToiletVisits 等欄位的邏輯與特殊值定義上，可能造成後續分析的困擾。
+
+CSV 匯入錯誤排查 (Invalid date format)：
+
+使用者回報在匯入 CSV 檔案時，持續發生日期格式錯誤。
+
+根本原因：使用者實際匯出的 CSV 檔案中，日期格式 (YYYY/M/D) 與程式預期的嚴格格式 (YYYY-MM-DD) 不符。
+
+解決方案：多次修正 importData 函式，大幅提升日期解析的彈性，使其能同時支援 YYYY/MM/DD、YYYY-MM-DD 及 YYYY/M/D 等多種常見格式，徹底解決此問題。
+
+核心邏輯重構 (排便紀錄)：
+
+使用者回饋：原有的 noBowel: FALSE (沒有排便: 否) 邏輯不夠直觀。
+
+決策：接受使用者建議，將核心邏輯改為 hadBowelMovement: TRUE (有排便: 是)。此修改遍及資料儲存、UI 顯示及匯入/匯出功能，使語意更清晰。
+
+使用者體驗 (UX) 全面優化：
+
+增加刪除確認：為避免誤觸，在刪除「單筆排便紀錄」和「常用藥物」時，新增了彈出式對話框進行二次確認。
+
+相容舊格式資料：為保障使用者舊有資料，importData 函式被賦予了自動偵測 noBowel (舊格式) 或 hadBowelMovement (新格式) 的能力，並能無痛轉換。
+
+美化空白頁面：當「歷史紀錄」或「統計圖表」沒有資料時，會顯示引導式的空白頁面，而非僅有文字。
+
+調整歷史紀錄排版：根據使用者提供的範例圖片，將歷史紀錄的顯示方式從多行斷行改為更緊湊、不換行的單行條列式，提升了可讀性。
+
+更新排便選項：將原有的單一勾選框，改為「今天有排便」/「今天無排便」的二選一按鈕，操作更明確。
+
+3. 最終版本功能盤點
+最終版本 (health_log_app_final_version) 包含以下主要功能與特性：
+
+✅ 直觀的資料邏輯：採用 hadBowelMovement 欄位，TRUE 代表有排便，FALSE 代表無，易於理解。
+
+✅ 穩健的資料接口：強化的 CSV 匯入功能可兼容多種日期格式，並能自動轉換舊版資料。匯出資料則統一為 YYYY/MM/DD 格式。
+
+✅ 友善的使用介面：
+
+明確的二選一排便狀態按鈕。
+
+簡潔、不換行的歷史紀錄排版。
+
+美觀的空白狀態引導頁面。
+
+✅ 安全的操作流程：關鍵的刪除操作皆有二次確認機制，防止資料意外遺失。
+
+📊 完整的統計圖表：提供睡眠品質、夜間如廁、排便時間/類型、RBD 症狀等多維度圖表分析。
+
+4. 後續維護與發展建議
+給下一位接任者的建議：
+☁️ 雲端同步：目前資料儲存於 localStorage，僅限單一裝置使用。未來最大的價值提升點在於整合雲端資料庫（如 Firebase Firestore），讓使用者可以跨裝置同步資料。
+
+🔔 新增提醒功能：增加每日定時提醒，鼓勵使用者持續記錄。
+
+📈 進階圖表分析：可引入更進階的圖表，例如症狀關聯性分析（如睡眠品質與 RBD 症狀的關聯圖）。
+
+🧑‍🤝‍🧑 使用者帳號系統：若要實現雲端同步，勢必需要建立使用者帳號系統。
+
+5. 總結
+本專案已達到一個功能完整、邏輯清晰且使用者體驗良好的穩定版本。所有與使用者協作過程中發現的問題均已修復，並根據其回饋進行了多項優化。後續開發可基於此穩定基礎，朝雲端化與智慧化功能邁進。
+
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -61,7 +135,7 @@
       border-color: #3B82F6; background-color: #EFF6FF; transform: scale(1.05);
     }
     .color-item.bristol-selected {
-       border-color: #3B82F6; background-color: #EFF6FF;
+        border-color: #3B82F6; background-color: #EFF6FF;
     }
     html.dark .bristol-item.bristol-selected {
       background-color: #0b3a75; border-color: #60a5fa;
@@ -73,17 +147,15 @@
     .star-rating .star { color: #d1d5db; cursor: pointer; transition: color 0.2s; }
     .star-rating .star:hover, .star-rating .star.selected { color: #f59e0b; }
 
-    .custom-checkbox:checked {
-      background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
-      background-color: #3B82F6; border-color: #3B82F6;
+    .custom-radio:checked {
+      background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");
+      background-color: #3B82F6;
+      border-color: #3B82F6;
     }
-    .custom-checkbox:disabled { background-color: #e5e7eb; border-color: #d1d5db; }
-    html.dark .custom-checkbox:disabled { background-color: #4b5563; border-color: #6b7280; }
 
     .option-button-group .option-button { transition: all 0.2s ease-in-out; }
     .option-button-group .option-button.selected { background-color: #3B82F6; color: white; border-color: #3B82F6; }
 
-    .bowel-record-disabled { opacity: 0.5; pointer-events: none; }
     .modal.hidden { display: none; }
 
     .form-section { border-top-width: 1px; padding-top: 10px; margin-top: 10px; }
@@ -108,6 +180,21 @@
     .status-badge-green { background-color: #D1FAE5; color: #065F46; }
     .status-badge-orange { background-color: #FFEDD5; color: #9A3412; }
     .status-badge-blue { background-color: #DBEAFE; color: #1E40AF; }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        border: 2px dashed #d1d5db;
+        border-radius: 12px;
+        color: #6b7280;
+    }
+    html.dark .empty-state {
+        border-color: #4b5563;
+        color: #9ca3af;
+    }
+    .empty-state svg {
+        margin: 0 auto 12px;
+    }
   </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-950 transition-colors duration-300">
@@ -150,15 +237,17 @@
 
           <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
             <h2 class="text-lg font-semibold">💩 排便紀錄</h2>
-            <label class="flex items-center select-none">
-              <input type="checkbox" id="no-bowel-today" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 custom-checkbox mr-2"/>
-              今天無排便
-            </label>
-            <div id="bowel-records-container" class="space-y-5"></div>
-            <button id="add-bowel-record-btn" class="w-full mt-2 text-blue-600 font-semibold py-2 px-4 rounded-lg border-2 border-dashed border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/50 transition flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              新增一筆排便紀錄
-            </button>
+            <div id="bowel-status-options" class="option-button-group flex gap-2">
+                <button type="button" class="option-button w-full py-2" data-value="yes">今天有排便</button>
+                <button type="button" class="option-button w-full py-2" data-value="no">今天無排便</button>
+            </div>
+            <div id="bowel-records-section" class="hidden">
+                <div id="bowel-records-container" class="space-y-5 mt-4"></div>
+                <button id="add-bowel-record-btn" class="w-full mt-2 text-blue-600 font-semibold py-2 px-4 rounded-lg border-2 border-dashed border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/50 transition flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  新增一筆排便紀錄
+                </button>
+            </div>
           </section>
 
           <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm text-slate-800 dark:text-slate-200">
@@ -209,44 +298,9 @@
           <h2 id="stats-week-title" class="text-lg font-semibold text-slate-800 dark:text-slate-200 text-center">本週統計</h2>
           <button id="next-week-btn" class="px-3 py-2 rounded-md bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>下一週 &gt;</button>
         </div>
-
-        <section id="ai-insight-section" class="bg-blue-50 dark:bg-blue-900/50 border-l-4 border-blue-500 p-4 rounded-r-lg shadow-sm space-y-2 text-blue-800 dark:text-blue-200">
-          <h3 class="text-lg font-semibold flex items-center">✨ 本週洞察</h3>
-          <div id="ai-insight-text" class="text-sm"></div>
-        </section>
-
-        <section id="bowel-analysis-section" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200"></section>
-        
-        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
-          <h3 class="text-lg font-semibold">😴 睡眠品質趨勢</h3>
-          <div class="relative h-64 md:h-80"><canvas id="sleep-chart"></canvas></div>
-          <div id="stats-summary-sleep" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
-        </section>
-        
-        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
-          <h3 class="text-lg font-semibold">🚽 夜間起床如廁次數趨勢</h3>
-          <div class="relative h-64 md:h-80"><canvas id="night-toilet-chart"></canvas></div>
-          <div id="stats-summary-night-toilet" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
-        </section>
-        
-        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
-          <h3 class="text-lg font-semibold">⏰ 排便時間點分佈</h3>
-          <div class="relative h-64 md:h-80"><canvas id="bowel-time-chart"></canvas></div>
-        </section>
-        
-        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
-          <h3 class="text-lg font-semibold">💩 排便類型趨勢</h3>
-          <div class="relative h-64 md:h-80"><canvas id="bowel-chart"></canvas></div>
-          <div id="stats-summary-bowel" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
-        </section>
-        
-        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
-          <h3 class="text-lg font-semibold">🏃‍♂️ RBD 症狀統計</h3>
-          <div class="relative h-64 md:h-80"><canvas id="rbd-chart"></canvas></div>
-          <div id="stats-summary-rbd" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
-        </section>
-        
-        <section id="health-tips-section" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-3 text-slate-800 dark:text-slate-200"></section>
+        <div id="stats-content" class="space-y-6">
+            <!-- Charts and analysis will be rendered here -->
+        </div>
       </div>
 
       <!-- ========= 歷史頁 ========= -->
@@ -384,7 +438,8 @@
       navItems: document.querySelectorAll('.nav-item'),
       toast: document.getElementById('toast-notification'),
       logDate: document.getElementById('log-date'),
-      noBowelToday: document.getElementById('no-bowel-today'),
+      bowelStatusOptions: document.getElementById('bowel-status-options'),
+      bowelRecordsSection: document.getElementById('bowel-records-section'),
       bowelRecordsContainer: document.getElementById('bowel-records-container'),
       addBowelRecordBtn: document.getElementById('add-bowel-record-btn'),
       sleepQualityRating: document.getElementById('sleep-quality-rating'),
@@ -397,25 +452,14 @@
       dailyNotes: document.getElementById('daily-notes'),
       saveLogButton: document.getElementById('save-log-button'),
       saveLogButtonContent: document.getElementById('save-log-button-content'),
-      statsPage: document.getElementById('stats-page'), 
-      aiInsightText: document.getElementById('ai-insight-text'), 
+      statsPage: document.getElementById('stats-page'),
+      statsContent: document.getElementById('stats-content'),
       historyList: document.getElementById('history-list'),
       weekFilter: document.getElementById('week-filter'),
       lastBackupInfo: document.getElementById('last-backup-info'),
       statsWeekTitle: document.getElementById('stats-week-title'),
       prevWeekBtn: document.getElementById('prev-week-btn'),
       nextWeekBtn: document.getElementById('next-week-btn'),
-      bowelAnalysisSection: document.getElementById('bowel-analysis-section'),
-      sleepChartCanvas: document.getElementById('sleep-chart'),
-      nightToiletChartCanvas: document.getElementById('night-toilet-chart'),
-      bowelTimeChartCanvas: document.getElementById('bowel-time-chart'),
-      bowelChartCanvas: document.getElementById('bowel-chart'),
-      rbdChartCanvas: document.getElementById('rbd-chart'),
-      statsSummarySleep: document.getElementById('stats-summary-sleep'),
-      statsSummaryNightToilet: document.getElementById('stats-summary-night-toilet'),
-      statsSummaryBowel: document.getElementById('stats-summary-bowel'),
-      statsSummaryRbd: document.getElementById('stats-summary-rbd'),
-      healthTipsSection: document.getElementById('health-tips-section'),
       exportCsvBtn: document.getElementById('export-csv-btn'),
       importCsvBtn: document.getElementById('import-csv-btn'),
       importFileInput: document.getElementById('import-file-input'),
@@ -447,7 +491,7 @@
       renderStaticComponents();
       setupEventListeners();
       setupGestureListeners(); 
-      DOM.logDate.value = appState.currentDate;
+      DOM.logDate.value = dayjs(appState.currentDate).format('YYYY-MM-DD');
       loadLogForDate(appState.currentDate);
       navigateTo('log-page');
     }
@@ -474,11 +518,11 @@
         const dataStr = localStorage.getItem('healthLogApp');
         if (dataStr) {
             const data = JSON.parse(dataStr);
-            if (data.logs) { // New format with meds
+            if (data.logs) {
                 appState.dailyLogs = data.logs;
                 appState.lastBackupDate = data.lastUpdated;
                 appState.commonMeds = data.commonMeds || [];
-            } else { // Old format
+            } else { // Handle very old format without logs wrapper
                 appState.dailyLogs = data;
                 appState.lastBackupDate = null;
                 appState.commonMeds = [];
@@ -499,7 +543,7 @@
     }
 
     function getEmptyLog() {
-      return { noBowel: false, bowel: [], sleep: 0, nightToiletVisits: -1, rbd: { symptoms: [], other: '' }, meds: '', dailyNotes: '' };
+      return { hadBowelMovement: false, bowel: [], sleep: 0, nightToiletVisits: -1, rbd: { symptoms: [], other: '' }, meds: '', dailyNotes: '' };
     }
     function getEmptyBowelRecord() {
       return { id: Date.now(), bowelTimeOfDay: '', types: [], color: '', volume: '', duration: '', notes: '', symptoms: [], additionalStatus: [] };
@@ -507,8 +551,15 @@
 
     function loadLogForDate(date) {
       const log = appState.dailyLogs[date] || getEmptyLog();
-      DOM.noBowelToday.checked = log.noBowel;
-      toggleBowelSection(log.noBowel);
+      
+      DOM.bowelStatusOptions.querySelectorAll('.option-button').forEach(btn => {
+          btn.classList.remove('selected');
+          if ((log.hadBowelMovement && btn.dataset.value === 'yes') || (!log.hadBowelMovement && btn.dataset.value === 'no')) {
+              btn.classList.add('selected');
+          }
+      });
+
+      toggleBowelSection(log.hadBowelMovement);
       renderBowelForms(log.bowel);
       updateStars(log.sleep);
       DOM.nightToiletVisits.querySelectorAll('.option-button').forEach(btn => {
@@ -534,25 +585,31 @@
         DOM.saveLogButton.disabled = true;
         DOM.saveLogButtonContent.innerHTML = `<svg class="spinner w-6 h-6 mr-2 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>儲存中...`;
         await new Promise(resolve => setTimeout(resolve, 500));
-        const bowelRecordsRaw = [];
-        document.querySelectorAll('.bowel-record-form').forEach(form => {
-            const getSelected = (className) => Array.from(form.querySelectorAll(`.${className} .selected`)).map(btn => btn.dataset.value);
-            bowelRecordsRaw.push({
-                id: form.dataset.id,
-                bowelTimeOfDay: form.querySelector('.bowel-time-of-day').value,
-                types: Array.from(form.querySelectorAll('.bristol-item.bristol-selected')).map(item => parseInt(item.dataset.type)),
-                color: form.querySelector('.color-item.bristol-selected')?.dataset.value || '',
-                volume: form.querySelector('.volume-options .selected')?.dataset.value || '',
-                duration: form.querySelector('.duration-options .selected')?.dataset.value || '',
-                notes: form.querySelector('.bowel-notes').value,
-                symptoms: getSelected('symptoms-options'),
-                additionalStatus: getSelected('status-options')
+        
+        const selectedBowelStatus = DOM.bowelStatusOptions.querySelector('.selected')?.dataset.value;
+        const hadBowelMovement = selectedBowelStatus === 'yes';
+        
+        let bowelRecords = [];
+        if (hadBowelMovement) {
+            document.querySelectorAll('.bowel-record-form').forEach(form => {
+                const getSelected = (className) => Array.from(form.querySelectorAll(`.${className} .selected`)).map(btn => btn.dataset.value);
+                bowelRecords.push({
+                    id: form.dataset.id,
+                    bowelTimeOfDay: form.querySelector('.bowel-time-of-day').value,
+                    types: Array.from(form.querySelectorAll('.bristol-item.bristol-selected')).map(item => parseInt(item.dataset.type)),
+                    color: form.querySelector('.color-item.bristol-selected')?.dataset.value || '',
+                    volume: form.querySelector('.volume-options .selected')?.dataset.value || '',
+                    duration: form.querySelector('.duration-options .selected')?.dataset.value || '',
+                    notes: form.querySelector('.bowel-notes').value,
+                    symptoms: getSelected('symptoms-options'),
+                    additionalStatus: getSelected('status-options')
+                });
             });
-        });
-        const bowelRecords = bowelRecordsRaw.filter(r => r.types.length > 0);
+        }
+
         appState.dailyLogs[date] = {
-            noBowel: DOM.noBowelToday.checked,
-            bowel: DOM.noBowelToday.checked ? [] : bowelRecords,
+            hadBowelMovement: hadBowelMovement,
+            bowel: bowelRecords,
             sleep: DOM.sleepQualityRating.querySelectorAll('.star.selected').length,
             nightToiletVisits: parseInt(document.querySelector('#night-toilet-visits .selected')?.dataset.value, 10) ?? -1,
             rbd: {
@@ -562,9 +619,7 @@
             meds: DOM.medicationLog.value,
             dailyNotes: DOM.dailyNotes.value
         };
-        if (appState.dailyLogs[date].bowel && appState.dailyLogs[date].bowel.length > 0) {
-            appState.dailyLogs[date].noBowel = false;
-        }
+
         saveData();
         DOM.saveLogButtonContent.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="mr-2 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>儲存成功！`;
         setTimeout(() => {
@@ -584,11 +639,13 @@
       }
 
       DOM.rbdSymptoms.innerHTML = rbdSymptomsList.map(s => `<label class="flex items-center has-[:disabled]:text-slate-400"><input type="checkbox" id="${s.id}" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 custom-checkbox mr-2"> ${s.label}</label>`).join('');
-      DOM.healthTipsSection.innerHTML = `<h3 class="text-lg font-semibold">💡 健康小提示</h3><ul class="text-sm text-slate-600 dark:text-slate-400 space-y-2 list-disc list-inside"><li><b>理想便便：</b>以「布里斯托大便分類法」第3–4型為佳，特別是第4型最理想。</li><li><b>注意警訊：</b>第1–2型偏硬可能便祕；第6–7型偏稀屬腹瀉，若持續出現建議就醫。</li><li><b>健康頻率：</b>一週約7次、形態多在第3–4型，通常代表腸道功能佳。</li><li><b>顏色觀察：</b>黃褐/棕色常見；若持續黑、紅或灰白色需提高警覺。</li><li><b>生活習慣：</b>形狀受水分與纖維影響大；規律運動與排便習慣同樣重要。</li><li><b>夜間如廁：</b>年輕人每晚 0-1 次屬正常；年長者 1-2 次尚屬普遍。若長期高於 2 次且影響睡眠，建議諮詢醫師。</li></ul>`;
     }
     function renderBowelForms(records = []) {
       DOM.bowelRecordsContainer.innerHTML = '';
-      if (records.length === 0 && !DOM.noBowelToday.checked) records.push(getEmptyBowelRecord());
+      const hadBowelMovement = DOM.bowelStatusOptions.querySelector('.selected')?.dataset.value === 'yes';
+      if (records.length === 0 && hadBowelMovement) {
+          records.push(getEmptyBowelRecord());
+      }
       records.forEach((record, index) => DOM.bowelRecordsContainer.insertAdjacentHTML('beforeend', createBowelFormHTML(record, index + 1)));
     }
     function createBowelFormHTML(record, index) {
@@ -620,7 +677,11 @@
         });
 
       if (filteredDates.length === 0) {
-        DOM.historyList.innerHTML = `<p class="text-center text-slate-500 dark:text-slate-400 py-8">此時間範圍內沒有紀錄。</p>`;
+        DOM.historyList.innerHTML = `<div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1" class="text-slate-400 dark:text-slate-500"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            <h3 class="font-semibold">尚無紀錄</h3>
+            <p class="text-sm mt-1">開始記錄您的第一筆健康日誌吧！</p>
+        </div>`;
         return;
       }
 
@@ -632,23 +693,23 @@
         
         return `<div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
             <div class="flex justify-between items-center mb-3">
-                <p class="font-bold text-lg text-slate-800 dark:text-slate-200">${dayjs(date).format('YYYY年M月D日')}</p>
+                <p class="font-bold text-lg text-slate-800 dark:text-slate-200">${dayjs(date).format('YYYY/MM/DD')}</p>
                 <button class="edit-log-btn text-sm text-blue-600 hover:underline" data-date="${date}">查看/編輯</button>
             </div>
             <div class="text-sm text-slate-700 dark:text-slate-300 space-y-2">
                 <p>😴 <b class="font-semibold">睡眠:</b> ${sleep} | 🚽 <b class="font-semibold">夜間如廁:</b> ${nightVisits}</p>
+                <p>🏃‍♂️ <b class="font-semibold">RBD 症狀:</b> ${rbdText}</p>
                 <div>
                     <p class="mb-1">💩 <b class="font-semibold">排便紀錄:</b></p> 
-                    ${log.noBowel ? '<span class="text-slate-500 dark:text-slate-400 ml-5">當日無排便</span>' : (log.bowel && log.bowel.length > 0 ? `<ul class="list-none pl-5 space-y-1">${log.bowel.map(b => {
+                    ${!log.hadBowelMovement ? '<span class="text-slate-500 dark:text-slate-400 ml-5">當日無排便</span>' : (log.bowel && log.bowel.length > 0 ? `<ul class="list-none pl-5 space-y-1">${log.bowel.map(b => {
                         const status = getBowelStatus(b.types);
                         const statusBadge = status ? `<span class="status-badge ${status.colorClass}">${status.icon} ${status.text}</span>` : '';
                         return `<li class="border-l-2 border-slate-200 dark:border-slate-700 pl-2">
-                                  <div class="flex items-center text-xs">${b.bowelTimeOfDay ? `<b>${b.bowelTimeOfDay}</b>` : ''}${statusBadge}</div>
-                                  <div class="text-slate-500 dark:text-slate-400 text-[11px]">類型 ${Array.isArray(b.types) && b.types.length ? b.types.join(', ') : '?'} (${b.color || 'N/A'}, ${b.volume || 'N/A'})</div>
+                                    <div class="flex items-center text-xs gap-2">${b.bowelTimeOfDay ? `<b>${b.bowelTimeOfDay}</b>` : ''}${statusBadge}</div>
+                                    <div class="text-slate-500 dark:text-slate-400 text-[11px]">類型 ${Array.isArray(b.types) && b.types.length ? b.types.join(', ') : '?'} (${b.color || 'N/A'}, ${b.volume || 'N/A'})</div>
                                 </li>`;
                     }).join('')}</ul>` : '<span class="text-slate-500 dark:text-slate-400 ml-5">未記錄</span>')}
                 </div>
-                <div><p>🏃‍♂️ <b class="font-semibold">RBD 症狀:</b> <span class="text-xs">${rbdText}</span></p></div>
             </div>
         </div>`;
       }).join('');
@@ -670,9 +731,62 @@
     function updateCharts() {
       const weekStart = dayjs().subtract(appState.statsWeekOffset, 'week').startOf('week');
       const weekEnd = dayjs().subtract(appState.statsWeekOffset, 'week').endOf('week');
-      DOM.statsWeekTitle.textContent = `${weekStart.format('YYYY/M/D')} - ${weekEnd.format('M/D')}`;
+      DOM.statsWeekTitle.textContent = `${weekStart.format('YYYY/MM/DD')} - ${weekEnd.format('MM/DD')}`;
       DOM.nextWeekBtn.disabled = appState.statsWeekOffset <= 0;
+      
       const weekData = getWeekData(weekStart); 
+      const hasAnyData = Object.values(weekData).some(arr => arr.some(val => val !== null && val !== 0 && (!Array.isArray(val) || val.length > 0)));
+
+      if (!hasAnyData) {
+        DOM.statsContent.innerHTML = `<div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1" class="text-slate-400 dark:text-slate-500"><path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
+            <h3 class="font-semibold">本週尚無統計資料</h3>
+            <p class="text-sm mt-1">請先新增一些日誌紀錄！</p>
+        </div>`;
+        return;
+      }
+      
+      DOM.statsContent.innerHTML = `
+        <section id="ai-insight-section" class="bg-blue-50 dark:bg-blue-900/50 border-l-4 border-blue-500 p-4 rounded-r-lg shadow-sm space-y-2 text-blue-800 dark:text-blue-200">
+          <h3 class="text-lg font-semibold flex items-center">✨ 本週洞察</h3>
+          <div id="ai-insight-text" class="text-sm"></div>
+        </section>
+        <section id="bowel-analysis-section" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200"></section>
+        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
+          <h3 class="text-lg font-semibold">😴 睡眠品質趨勢</h3>
+          <div class="relative h-64 md:h-80"><canvas id="sleep-chart"></canvas></div>
+          <div id="stats-summary-sleep" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
+        </section>
+        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
+          <h3 class="text-lg font-semibold">🚽 夜間起床如廁次數趨勢</h3>
+          <div class="relative h-64 md:h-80"><canvas id="night-toilet-chart"></canvas></div>
+          <div id="stats-summary-night-toilet" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
+        </section>
+        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
+          <h3 class="text-lg font-semibold">⏰ 排便時間點分佈</h3>
+          <div class="relative h-64 md:h-80"><canvas id="bowel-time-chart"></canvas></div>
+        </section>
+        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
+          <h3 class="text-lg font-semibold">💩 排便類型趨勢</h3>
+          <div class="relative h-64 md:h-80"><canvas id="bowel-chart"></canvas></div>
+          <div id="stats-summary-bowel" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
+        </section>
+        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
+          <h3 class="text-lg font-semibold">🏃‍♂️ RBD 症狀統計</h3>
+          <div class="relative h-64 md:h-80"><canvas id="rbd-chart"></canvas></div>
+          <div id="stats-summary-rbd" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
+        </section>
+        <section id="health-tips-section" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-3 text-slate-800 dark:text-slate-200"></section>
+      `;
+      // Re-assign DOM elements after re-rendering
+      DOM.aiInsightText = document.getElementById('ai-insight-text');
+      DOM.bowelAnalysisSection = document.getElementById('bowel-analysis-section');
+      DOM.statsSummarySleep = document.getElementById('stats-summary-sleep');
+      DOM.statsSummaryNightToilet = document.getElementById('stats-summary-night-toilet');
+      DOM.statsSummaryBowel = document.getElementById('stats-summary-bowel');
+      DOM.statsSummaryRbd = document.getElementById('stats-summary-rbd');
+      DOM.healthTipsSection = document.getElementById('health-tips-section');
+      
       generateHealthInsights(weekData); 
       updateBowelAnalysis(weekStart);
       updateSleepChart(weekStart, weekData);
@@ -680,6 +794,7 @@
       updateBowelTimeChart(weekStart, weekData);
       updateBowelChart(weekStart, weekData);
       updateRbdChart(weekStart, weekData);
+      renderStaticHealthTips();
     }
 
     function getWeekData(weekStart) {
@@ -700,6 +815,7 @@
     }
 
     function generateHealthInsights(weekData) {
+        if (!DOM.aiInsightText) return;
         const totalBowelMovements = weekData.bowelCount.reduce((a, b) => a + b, 0);
         
         const validSleep = weekData.sleep.filter(s => s > 0);
@@ -721,6 +837,7 @@
     }
 
     function updateBowelAnalysis(weekStart) {
+      if (!DOM.bowelAnalysisSection) return;
       const allLogs = appState.dailyLogs;
       let lastBM = null;
       const sortedDates = Object.keys(allLogs).sort().reverse();
@@ -752,20 +869,26 @@
       DOM.bowelAnalysisSection.innerHTML = `<h3 class="text-lg font-semibold">📊 排便分析</h3><p class="text-sm text-slate-600 dark:text-slate-400"><b>上一次排便：</b> ${lastBM ? lastBM.fromNow() : '無紀錄'}</p><div class="grid grid-cols-2 gap-4 text-center"><div class="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p class="text-2xl font-bold">${currentWeekStats.totalBMs} <span class="text-sm font-normal">次</span></p><p class="text-xs text-slate-500 dark:text-slate-400">${weekLabel}</p><p class="text-xs text-slate-500 dark:text-slate-400 mt-1">相較於前7天的 ${previousWeekStats.totalBMs} 次</p></div><div class="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p class="text-2xl font-bold">${goodBMPercent}<span class="text-sm font-normal">%</span></p><p class="text-xs text-slate-500 dark:text-slate-400">${weekLabel}健康便便</p><p class="text-xs text-slate-500 dark:text-slate-400 mt-1">相較於前7天的 ${prevGoodBMPercent}%</p></div></div>`;
     }
     function updateSleepChart(weekStart, weekData) {
+      const canvas = document.getElementById('sleep-chart');
+      if (!canvas) return;
       const colors = getChartColors();
       if (appState.charts.sleep) appState.charts.sleep.destroy();
-      appState.charts.sleep = new Chart(DOM.sleepChartCanvas, { type: 'line', data: { labels: weekData.labels, datasets: [{ label: '睡眠品質', data: weekData.sleep, borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', fill: true, tension: 0.3, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 1, max: 5, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false } } } });
+      appState.charts.sleep = new Chart(canvas, { type: 'line', data: { labels: weekData.labels, datasets: [{ label: '睡眠品質', data: weekData.sleep, borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', fill: true, tension: 0.3, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 1, max: 5, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false } } } });
       const validRecords = weekData.sleep.filter(p => p !== null && p > 0);
       DOM.statsSummarySleep.textContent = validRecords.length > 0 ? `本週平均睡眠品質為 ${(validRecords.reduce((a, b) => a + b, 0) / validRecords.length).toFixed(1)} 顆星。` : '本週沒有睡眠品質紀錄。';
     }
     function updateNightToiletChart(weekStart, weekData) {
+      const canvas = document.getElementById('night-toilet-chart');
+      if (!canvas) return;
       const colors = getChartColors();
       if (appState.charts.nightToilet) appState.charts.nightToilet.destroy();
-      appState.charts.nightToilet = new Chart(DOM.nightToiletChartCanvas, { type: 'bar', data: { labels: weekData.labels, datasets: [{ label: '夜間如廁次數', data: weekData.nightToilet, backgroundColor: 'rgba(139, 92, 246, 0.6)', borderColor: 'rgba(139, 92, 246, 1)', borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false } } } });
+      appState.charts.nightToilet = new Chart(canvas, { type: 'bar', data: { labels: weekData.labels, datasets: [{ label: '夜間如廁次數', data: weekData.nightToilet, backgroundColor: 'rgba(139, 92, 246, 0.6)', borderColor: 'rgba(139, 92, 246, 1)', borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false } } } });
       const validRecords = weekData.nightToilet.filter(p => p !== null);
       DOM.statsSummaryNightToilet.textContent = validRecords.length > 0 ? `本週平均夜間如廁 ${(validRecords.reduce((a, b) => a + b, 0) / validRecords.length).toFixed(1)} 次。` : '本週沒有夜間如廁紀錄。';
     }
     function updateBowelTimeChart(weekStart, weekData) {
+      const canvas = document.getElementById('bowel-time-chart');
+      if (!canvas) return;
       const colors = getChartColors();
       const datasets = [];
       weekData.dates.forEach((dateStr, i) => {
@@ -780,20 +903,24 @@
         }
       });
       if (appState.charts.bowelTime) appState.charts.bowelTime.destroy();
-      appState.charts.bowelTime = new Chart(DOM.bowelTimeChartCanvas, { type: 'scatter', data: { datasets: [{ label: '排便時間', data: datasets, backgroundColor: 'rgba(59, 130, 246, 0.7)', pointRadius: 6, pointHoverRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'linear', position: 'bottom', ticks: { color: colors.textColor, stepSize: 1, callback: (value) => weekData.labels[value] || '' }, grid: { display: false } }, y: { reverse: true, min: 0, max: 24, ticks: { color: colors.textColor, stepSize: 3, callback: (value) => `${String(value).padStart(2, '0')}:00` }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => { const d = c.dataset.data[c.dataIndex]; const h = Math.floor(d.y); const m = Math.round((d.y - h) * 60); return `時間: ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} (類型: ${d.types})`; } } } } } });
+      appState.charts.bowelTime = new Chart(canvas, { type: 'scatter', data: { datasets: [{ label: '排便時間', data: datasets, backgroundColor: 'rgba(59, 130, 246, 0.7)', pointRadius: 6, pointHoverRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'linear', position: 'bottom', ticks: { color: colors.textColor, stepSize: 1, callback: (value) => weekData.labels[value] || '' }, grid: { display: false } }, y: { reverse: true, min: 0, max: 24, ticks: { color: colors.textColor, stepSize: 3, callback: (value) => `${String(value).padStart(2, '0')}:00` }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => { const d = c.dataset.data[c.dataIndex]; const h = Math.floor(d.y); const m = Math.round((d.y - h) * 60); return `時間: ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} (類型: ${d.types})`; } } } } } });
     }
     function updateBowelChart(weekStart, weekData) {
+      const canvas = document.getElementById('bowel-chart');
+      if (!canvas) return;
       const colors = getChartColors();
       const dataPoints = weekData.bowel.map(dayBowel => {
         if (dayBowel && dayBowel.length > 0) return dayBowel.reduce((a, b) => a + b, 0) / dayBowel.length;
         return null;
       });
       if (appState.charts.bowel) appState.charts.bowel.destroy();
-      appState.charts.bowel = new Chart(DOM.bowelChartCanvas, { type: 'line', data: { labels: weekData.labels, datasets: [{ label: '布里斯托分類', data: dataPoints, borderColor: '#3B82F6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.3, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 1, max: 7, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false } } } });
+      appState.charts.bowel = new Chart(canvas, { type: 'line', data: { labels: weekData.labels, datasets: [{ label: '布里斯托分類', data: dataPoints, borderColor: '#3B82F6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.3, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 1, max: 7, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false } } } });
       const validRecords = dataPoints.filter(p => p !== null);
       DOM.statsSummaryBowel.textContent = validRecords.length > 0 ? `本週平均類型為 ${(validRecords.reduce((a, b) => a + b, 0) / validRecords.length).toFixed(1)}。` : '本週沒有排便紀錄。';
     }
     function updateRbdChart(weekStart, weekData) {
+      const canvas = document.getElementById('rbd-chart');
+      if (!canvas) return;
       const colors = getChartColors();
       const rbdSymptomMap = rbdSymptomsList.reduce((acc, s) => ({...acc, [s.id]: s.label}), {});
       const tooltipLabels = weekData.dates.map(dateStr => {
@@ -804,14 +931,30 @@
           return '無症狀';
       });
       if (appState.charts.rbd) appState.charts.rbd.destroy();
-      appState.charts.rbd = new Chart(DOM.rbdChartCanvas, { type: 'bar', data: { labels: weekData.labels, datasets: [{ label: '症狀次數', data: weekData.rbd, backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: 'rgba(239, 68, 68, 1)', borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y} 次`, afterLabel: (c) => tooltipLabels[c.dataIndex] } } } } });
+      appState.charts.rbd = new Chart(canvas, { type: 'bar', data: { labels: weekData.labels, datasets: [{ label: '症狀次數', data: weekData.rbd, backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: 'rgba(239, 68, 68, 1)', borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } }, x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y} 次`, afterLabel: (c) => tooltipLabels[c.dataIndex] } } } } });
       DOM.statsSummaryRbd.textContent = `本週共記錄 ${weekData.rbd.reduce((a, b) => a + b, 0)} 次RBD相關症狀。`;
+    }
+    
+    function renderStaticHealthTips() {
+        if (!DOM.healthTipsSection) return;
+        DOM.healthTipsSection.innerHTML = `<h3 class="text-lg font-semibold">💡 健康小提示</h3><ul class="text-sm text-slate-600 dark:text-slate-400 space-y-2 list-disc list-inside"><li><b>理想便便：</b>以「布里斯托大便分類法」第3–4型為佳，特別是第4型最理想。</li><li><b>注意警訊：</b>第1–2型偏硬可能便祕；第6–7型偏稀屬腹瀉，若持續出現建議就醫。</li><li><b>健康頻率：</b>一週約7次、形態多在第3–4型，通常代表腸道功能佳。</li><li><b>顏色觀察：</b>黃褐/棕色常見；若持續黑、紅或灰白色需提高警覺。</li><li><b>生活習慣：</b>形狀受水分與纖維影響大；規律運動與排便習慣同樣重要。</li><li><b>夜間如廁：</b>年輕人每晚 0-1 次屬正常；年長者 1-2 次尚屬普遍。若長期高於 2 次且影響睡眠，建議諮詢醫師。</li></ul>`;
     }
 
     function setupEventListeners() {
       DOM.logDate.addEventListener('change', e => { appState.currentDate = e.target.value; loadLogForDate(appState.currentDate); });
-      DOM.noBowelToday.addEventListener('change', e => toggleBowelSection(e.target.checked));
-      DOM.addBowelRecordBtn.addEventListener('click', () => DOM.bowelRecordsContainer.insertAdjacentHTML('beforeend', createBowelFormHTML(getEmptyBowelRecord(), DOM.bowelRecordsContainer.children.length + 1)));
+      
+      DOM.bowelStatusOptions.addEventListener('click', e => {
+          const button = e.target.closest('.option-button');
+          if (button) {
+              DOM.bowelStatusOptions.querySelectorAll('.option-button').forEach(btn => btn.classList.remove('selected'));
+              button.classList.add('selected');
+              toggleBowelSection(button.dataset.value === 'yes');
+          }
+      });
+
+      DOM.addBowelRecordBtn.addEventListener('click', () => {
+          DOM.bowelRecordsContainer.insertAdjacentHTML('beforeend', createBowelFormHTML(getEmptyBowelRecord(), DOM.bowelRecordsContainer.children.length + 1));
+      });
       DOM.bowelRecordsContainer.addEventListener('click', e => {
         const t = e.target;
         const bristolItem = t.closest('.bristol-item'); if (bristolItem) bristolItem.classList.toggle('bristol-selected');
@@ -825,7 +968,13 @@
             if (colorInfo) showColorInfoModal(colorInfo);
         }
         const optionButton = t.closest('.option-button'); if (optionButton) { const g = optionButton.closest('.option-button-group'); if (g.classList.contains('multi-select-group')) { if (optionButton.dataset.value === '無') { g.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected')); optionButton.classList.add('selected'); } else { const n = g.querySelector('[data-value="無"]'); if (n) n.classList.remove('selected'); optionButton.classList.toggle('selected'); } } else { g.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected')); optionButton.classList.add('selected'); } }
-        if (t.classList.contains('remove-bowel-record-btn')) { t.closest('.bowel-record-form').remove(); DOM.bowelRecordsContainer.querySelectorAll('h4').forEach((h, i) => h.textContent = `第 ${i + 1} 筆紀錄`); }
+        const removeBtn = t.closest('.remove-bowel-record-btn');
+        if (removeBtn) {
+            showConfirmation('刪除紀錄', '您確定要刪除這筆排便紀錄嗎？此操作無法復原。', () => {
+                removeBtn.closest('.bowel-record-form').remove();
+                DOM.bowelRecordsContainer.querySelectorAll('h4').forEach((h, i) => h.textContent = `第 ${i + 1} 筆紀錄`);
+            });
+        }
       });
       DOM.sleepQualityRating.addEventListener('click', e => { if (e.target.classList.contains('star')) updateStars(e.target.dataset.value); });
       DOM.nightToiletVisits.addEventListener('click', e => {
@@ -851,7 +1000,15 @@
       DOM.manageMedsBtn.addEventListener('click', openMedsModal);
       DOM.medsModalCloseBtn.addEventListener('click', () => DOM.medsModal.classList.add('hidden'));
       DOM.addMedBtn.addEventListener('click', addCommonMed);
-      DOM.medsList.addEventListener('click', e => { if(e.target.classList.contains('delete-med-btn')) deleteCommonMed(e.target.dataset.med); });
+      DOM.medsList.addEventListener('click', e => { 
+          const deleteBtn = e.target.closest('.delete-med-btn');
+          if(deleteBtn) {
+              const medName = deleteBtn.dataset.med;
+              showConfirmation('刪除常用藥物', `您確定要刪除「${medName}」嗎？`, () => {
+                  deleteCommonMed(medName);
+              });
+          }
+      });
       DOM.clearMedsBtn.addEventListener('click', () => { DOM.medicationLog.value = ''; });
       DOM.commonMedsContainer.addEventListener('click', e => { if(e.target.classList.contains('common-med-btn')) addMedToLog(e.target.dataset.med); });
       DOM.weekFilter.addEventListener('change', e => renderHistoryList(e.target.value));
@@ -885,11 +1042,11 @@
       if (n.checked) { o.forEach(c => { c.checked = false; c.disabled = true; }); } 
       else { const a = Array.from(o).some(c => c.checked); n.disabled = a; o.forEach(c => { c.disabled = false; }); }
     }
-    function toggleBowelSection(disabled) {
-      DOM.bowelRecordsContainer.classList.toggle('bowel-record-disabled', disabled);
-      DOM.addBowelRecordBtn.classList.toggle('bowel-record-disabled', disabled);
-      if (disabled) DOM.bowelRecordsContainer.innerHTML = '';
-      else if (DOM.bowelRecordsContainer.children.length === 0) renderBowelForms([]);
+    function toggleBowelSection(show) {
+      DOM.bowelRecordsSection.classList.toggle('hidden', !show);
+      if (show && DOM.bowelRecordsContainer.children.length === 0) {
+          renderBowelForms([]);
+      }
     }
     let toastTimer;
     function showToast(message, type = 'error') {
@@ -938,7 +1095,11 @@
       if (DOM.sleepQualityRating.querySelectorAll('.star.selected').length === 0) missing.push('昨晚睡眠品質');
       if (document.querySelector('#night-toilet-visits .selected') === null) missing.push('夜間如廁次數');
       if (document.querySelectorAll('#rbd-symptoms input:checked').length === 0) missing.push('RBD 症狀');
-      if (!DOM.noBowelToday.checked) {
+      
+      const selectedBowelStatus = DOM.bowelStatusOptions.querySelector('.selected');
+      if (!selectedBowelStatus) {
+          missing.push('排便狀況');
+      } else if (selectedBowelStatus.dataset.value === 'yes') {
         const bowelForms = document.querySelectorAll('.bowel-record-form');
         if (bowelForms.length === 0) missing.push('至少一筆排便紀錄');
         bowelForms.forEach((form, index) => {
@@ -973,12 +1134,23 @@
     }
 
     function exportDataAsCsv() {
-        const headers = ['date', 'noBowel', 'bowelRecords', 'sleep', 'nightToiletVisits', 'rbdSymptoms', 'rbdOther', 'meds', 'dailyNotes'];
+        const headers = ['date', 'hadBowelMovement', 'bowelRecords', 'sleep', 'nightToiletVisits', 'rbdSymptoms', 'rbdOther', 'meds', 'dailyNotes'];
         const csvRows = [headers.join(',')];
         const sortedDates = Object.keys(appState.dailyLogs).sort();
         for (const date of sortedDates) {
             const log = appState.dailyLogs[date];
-            const row = [date, log.noBowel, JSON.stringify(log.bowel || []), log.sleep || 0, log.nightToiletVisits ?? -1, JSON.stringify(log.rbd ? log.rbd.symptoms : []), log.rbd ? log.rbd.other : '', log.meds || '', log.dailyNotes || ''].map(formatCsvCell).join(',');
+            const exportedVisits = (log.nightToiletVisits === -1 || log.nightToiletVisits == null) ? '' : log.nightToiletVisits;
+            const row = [
+                dayjs(date).format('YYYY/MM/DD'),
+                log.hadBowelMovement,
+                JSON.stringify(log.bowel || []),
+                log.sleep || 0,
+                exportedVisits,
+                JSON.stringify(log.rbd ? log.rbd.symptoms : []),
+                log.rbd ? log.rbd.other : '',
+                log.meds || '',
+                log.dailyNotes || ''
+            ].map(formatCsvCell).join(',');
             csvRows.push(row);
         }
         const csvString = csvRows.join('\n');
@@ -1003,22 +1175,47 @@
             const lines = e.target.result.split('\n').filter(line => line.trim() !== '');
             if (lines.length < 2) { showToast('CSV 檔案為空或格式不正確。', 'error'); return; }
             const headers = parseCsvRow(lines.shift()).map(cleanInvisible);
-            if (!['date', 'noBowel', 'bowelRecords', 'sleep'].every(h => headers.includes(h))) { showToast('CSV 檔案缺少必要的欄位。', 'error'); return; }
+            const requiredHeaders = ['date', 'bowelRecords', 'sleep'];
+            if (!requiredHeaders.every(h => headers.includes(h))) { showToast('CSV 檔案缺少必要的欄位。', 'error'); return; }
+            
+            const isOldFormat = headers.includes('noBowel');
+
             const importedLogs = {}; let errorCount = 0;
             lines.forEach((line, index) => {
                 try {
                     const values = parseCsvRow(line);
                     const rowData = headers.reduce((obj, h, i) => ({...obj, [h]: values[i]}), {});
-                    const date = dayjs(rowData.date).format('YYYY-MM-DD');
-                    if (date === 'Invalid Date') throw new Error('Invalid date format');
+                    
+                    const dateString = rowData.date.trim();
+                    const parsedDate = dayjs(dateString, ['YYYY/MM/DD', 'YYYY-MM-DD', 'YYYY/M/D'], true);
+                    
+                    if (!parsedDate.isValid()) {
+                        throw new Error(`日期格式無效: "${dateString}"`);
+                    }
+                    const date = parsedDate.format('YYYY-MM-DD');
+
+                    const visits = parseInt(rowData.nightToiletVisits, 10);
+                    
+                    let hadBowelMovement;
+                    if (isOldFormat) {
+                        hadBowelMovement = rowData.noBowel === 'false';
+                    } else {
+                        hadBowelMovement = rowData.hadBowelMovement === 'true';
+                    }
+
                     importedLogs[date] = {
-                        noBowel: rowData.noBowel === 'true', bowel: JSON.parse(rowData.bowelRecords || '[]'),
+                        hadBowelMovement: hadBowelMovement, 
+                        bowel: JSON.parse(rowData.bowelRecords || '[]'),
                         sleep: parseInt(rowData.sleep, 10) || 0,
-                        nightToiletVisits: parseInt(rowData.nightToiletVisits, 10) ?? -1,
+                        nightToiletVisits: isNaN(visits) ? -1 : visits,
                         rbd: { symptoms: JSON.parse(rowData.rbdSymptoms || '[]'), other: rowData.rbdOther || '' },
-                        meds: rowData.meds || '', dailyNotes: rowData.dailyNotes || ''
+                        meds: rowData.meds || '', 
+                        dailyNotes: rowData.dailyNotes || ''
                     };
-                } catch (err) { errorCount++; console.error(`無法解析第 ${index + 2} 行:`, err); }
+                } catch (err) { 
+                    errorCount++; 
+                    console.error(`無法解析第 ${index + 2} 行:`, err); 
+                }
             });
             if(errorCount > 0) showToast(`匯入完成，但有 ${errorCount} 行資料解析失敗。`, 'error');
             showConfirmation('匯入資料', `成功解析 ${Object.keys(importedLogs).length} 筆紀錄。確定要匯入並覆蓋現有資料嗎？`, () => {
@@ -1094,8 +1291,8 @@
         DOM.weekFilter.innerHTML = '<option value="all">全部紀錄</option>';
         sortedWeeks.forEach(weekStr => {
             const [year, week] = weekStr.split('-');
-            const weekStart = dayjs().year(year).week(week).startOf('week').format('M/D');
-            const weekEnd = dayjs().year(year).week(week).endOf('week').format('M/D');
+            const weekStart = dayjs().year(year).week(week).startOf('week').format('MM/DD');
+            const weekEnd = dayjs().year(year).week(week).endOf('week').format('MM/DD');
             DOM.weekFilter.innerHTML += `<option value="${weekStr}">${year}年 (${weekStart} - ${weekEnd})</option>`;
         });
     }
