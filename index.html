@@ -614,7 +614,7 @@
       DOM.historyList.innerHTML = filteredDates.map(date => {
         const log = appState.dailyLogs[date];
         const sleep = log.sleep > 0 ? `${'★'.repeat(log.sleep)}${'☆'.repeat(5 - log.sleep)}` : '未記錄';
-        const nightVisits = (log.nightToiletVisits !== undefined && log.nightToiletVisits > -1) ? `${log.nightToiletVisits} 次` : '未記錄';
+        const nightVisits = (log.nightToiletVisits !== undefined && log.nightToiletVisits > 0) ? `${log.nightToiletVisits} 次` : '0 次';
         const rbdText = log.rbd.symptoms.length > 0 ? log.rbd.symptoms.map(id => rbdSymptomsList.find(s => s.id === id)?.label || id).join('、 ') : '無';
         
         return `<div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -623,7 +623,8 @@
                 <button class="edit-log-btn text-sm text-blue-600 hover:underline" data-date="${date}">查看/編輯</button>
             </div>
             <div class="text-sm text-slate-700 dark:text-slate-300 space-y-2">
-                <p>😴 <b class="font-semibold">睡眠:</b> ${sleep} | 🚽 <b class="font-semibold">夜間如廁:</b> ${nightVisits}</p>
+                <p>😴 <b class="font-semibold">睡眠:</b> ${sleep}</p>
+                <p>🚽 <b class="font-semibold">夜間如廁:</b> ${nightVisits}</p>
                 <p>🏃‍♂️ <b class="font-semibold">RBD 症狀:</b> ${rbdText}</p>
                 <div>
                     <p class="mb-1">💩 <b class="font-semibold">排便紀錄:</b></p> 
