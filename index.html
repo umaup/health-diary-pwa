@@ -1043,17 +1043,7 @@
       if (missing.length > 0) { showToast(`請完成以下欄位：${missing.join('、')}`, 'error'); return false; }
       return true;
     }
-
-    function parseCsvRow(rowString) {
-      const values = []; let currentVal = ''; let inQuotes = false;
-      for (let i = 0; i < rowString.length; i++) {
-        const char = rowString[i];
-        if (char === '"') { if (inQuotes && rowString[i + 1] === '"') { currentVal += '"'; i++; } else { inQuotes = !inQuotes; } } 
-        else if (char === ',' && !inQuotes) { values.push(currentVal); currentVal = ''; } 
-        else { currentVal += char; }
-      }
-      values.push(currentVal); return values;
-    }
+    
     function formatCsvCell(value) {
         const strValue = String(value).replace(/"/g, '""');
         if (strValue.includes(',') || strValue.includes('"') || strValue.includes('\n')) return `"${strValue}"`;
@@ -1099,21 +1089,77 @@
         const file = event.target.files[0]; if (!file) return;
         const reader = new FileReader();
         reader.onload = (e) => {
-            const lines = e.target.result.split('\n').filter(line => line.trim() !== '');
-            if (lines.length < 2) { showToast('CSV 檔案為空或格式不正確。', 'error'); return; }
-            const headers = parseCsvRow(lines.shift()).map(cleanInvisible);
+            // New robust CSV parser function
+            function parseCSV(csvString) {
+                const rows = [];
+                let currentRow = [];
+                let currentField = '';
+                let inQuotes = false;
+                // Normalize line endings
+                const cleanedString = csvString.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+                for (let i = 0; i < cleanedString.length; i++) {
+                    const char = cleanedString[i];
+
+                    if (inQuotes) {
+                        if (char === '"') {
+                            // Check for escaped quote
+                            if (i + 1 < cleanedString.length && cleanedString[i + 1] === '"') {
+                                currentField += '"';
+                                i++; // Skip the second quote
+                            } else {
+                                inQuotes = false; // End of quoted field
+                            }
+                        } else {
+                            currentField += char;
+                        }
+                    } else {
+                        if (char === '"') {
+                            inQuotes = true;
+                        } else if (char === ',') {
+                            currentRow.push(currentField);
+                            currentField = '';
+                        } else if (char === '\n') {
+                            currentRow.push(currentField);
+                            rows.push(currentRow);
+                            currentRow = [];
+                            currentField = '';
+                        } else {
+                            currentField += char;
+                        }
+                    }
+                }
+                // Push the last field and row
+                if (currentField || currentRow.length > 0) {
+                    currentRow.push(currentField);
+                    rows.push(currentRow);
+                }
+                return rows.filter(row => row.length > 1 || (row.length === 1 && row[0] !== ''));
+            }
+
+            const rows = parseCSV(e.target.result);
+            
+            if (rows.length < 2) { showToast('CSV 檔案為空或格式不正確。', 'error'); return; }
+            
+            const headers = rows.shift().map(cleanInvisible);
             const requiredHeaders = ['date', 'bowelRecords', 'sleep'];
             if (!requiredHeaders.every(h => headers.includes(h))) { showToast('CSV 檔案缺少必要的欄位。', 'error'); return; }
             
             const isOldFormat = headers.includes('noBowel');
 
             const importedLogs = {}; let errorCount = 0;
-            lines.forEach((line, index) => {
+            rows.forEach((values, index) => { // Now `rows` is an array of arrays
                 try {
-                    const values = parseCsvRow(line);
+                    if (values.length < headers.length) {
+                        // Skip potentially empty or malformed rows
+                        return;
+                    }
                     const rowData = headers.reduce((obj, h, i) => ({...obj, [h]: values[i]}), {});
                     
-                    const dateString = rowData.date.trim();
+                    const dateString = rowData.date ? rowData.date.trim() : '';
+                    if (!dateString) {
+                         throw new Error(`第 ${index + 2} 行日期為空。`);
+                    }
                     const parsedDate = dayjs(dateString, ['YYYY/MM/DD', 'YYYY-MM-DD', 'YYYY/M/D'], true);
                     
                     if (!parsedDate.isValid()) {
