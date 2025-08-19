@@ -249,6 +249,10 @@
                     匯出為 CSV
                 </button>
             </div>
+            <button id="delete-all-data-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center mt-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
+                刪除全部資料
+            </button>
           </div>
           <input type="file" id="import-file-input" class="hidden" accept=".csv, text/csv"/>
           <div class="flex justify-between items-center mb-4 mt-6">
@@ -389,6 +393,7 @@
       exportCsvBtn: document.getElementById('export-csv-btn'),
       importCsvBtn: document.getElementById('import-csv-btn'),
       importFileInput: document.getElementById('import-file-input'),
+      deleteAllDataBtn: document.getElementById('delete-all-data-btn'),
       confirmationModal: document.getElementById('confirmation-modal'),
       modalTitle: document.getElementById('modal-title'),
       modalMessage: document.getElementById('modal-message'),
@@ -575,13 +580,56 @@
       records.forEach((record, index) => DOM.bowelRecordsContainer.insertAdjacentHTML('beforeend', createBowelFormHTML(record, index + 1)));
     }
     function createBowelFormHTML(record, index) {
-      return `<div class="bowel-record-form border-t-2 border-slate-200 dark:border-slate-700 pt-4" data-id="${record.id}"><div class="flex justify-between items-center mb-3"><h4 class="font-semibold text-md text-slate-700 dark:text-slate-300">第 ${index} 筆紀錄</h4>${index > 1 ? `<button class="remove-bowel-record-btn text-sm font-medium text-red-500 hover:text-red-700">刪除此筆</button>` : ''}</div><div class="form-section border-slate-200 dark:border-slate-700"><div class="grid grid-cols-3 gap-2">${bristolData.map(item => `<div class="bristol-item p-2 rounded-lg border-2 border-slate-200 dark:border-slate-600 cursor-pointer text-center flex flex-col justify-start items-center ${record.types.includes(item.type) ? 'bristol-selected' : ''}" data-type="${item.type}" tabindex="0"><svg viewBox="0 0 24 18" class="w-12 h-10 mx-auto mb-1">${item.svg}</svg><p class="font-semibold text-xs text-slate-800 dark:text-slate-200">類型 ${item.type}</p><p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">${item.d}</p></div>`).join('')}</div></div><div class="space-y-3 mt-3"><div class="form-section border-slate-200 dark:border-slate-700"><label class="form-section-label text-slate-600 dark:text-slate-400">⏰ 排便時間點</label><input type="time" class="bowel-time-of-day w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 rounded-md" value="${record.bowelTimeOfDay || ''}"></div><div class="form-section border-slate-200 dark:border-slate-700"><label class="form-section-label text-slate-600 dark:text-slate-400">🎨 顏色</label><div class="color-options grid grid-cols-3 gap-2">${bowelColorData.map(color => `<div class="color-item p-2 rounded-lg border-2 border-slate-200 dark:border-slate-600 cursor-pointer text-center flex flex-col items-center justify-center ${record.color === color.name ? 'bristol-selected' : ''}" data-value="${color.name}"><div class="w-10 h-10 rounded-full mb-1" style="background-color:${color.colorHex};"></div><p class="text-xs text-slate-600 dark:text-slate-400">${color.name}</p></div>`).join('')}</div></div><div class="grid grid-cols-2 gap-3">${createOptionGroup('📏 排便量', 'volume-options', bowelVolumes, record.volume, false)}${createOptionGroup('⏱️ 排便耗時', 'duration-options', bowelDurations, record.duration, false)}</div>${createOptionGroup('😖 症狀', 'symptoms-options', bowelSymptoms, record.symptoms, true)}${createOptionGroup('✨ 附加狀態', 'status-options', bowelAdditionalStatus, record.additionalStatus, true)}<div class="form-section border-slate-200 dark:border-slate-700"><label class="form-section-label text-slate-600 dark:text-slate-400">🗒️ 備註</label><textarea class="bowel-notes w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 rounded-md">${record.notes || ''}</textarea></div></div></div>`;
+      return `<div class="bowel-record-form border-t-2 border-slate-200 dark:border-slate-700 pt-4" data-id="${record.id}">
+        <div class="flex justify-between items-center mb-4">
+            <h4 class="font-semibold text-md text-slate-700 dark:text-slate-300">第 ${index} 筆紀錄</h4>
+            ${index > 1 ? `<button class="remove-bowel-record-btn text-sm font-medium text-red-500 hover:text-red-700">刪除此筆</button>` : ''}
+        </div>
+        
+        <div class="space-y-4">
+            <!-- (1) 排便時間點 -->
+            <div class="form-section !mt-0 !pt-0 !border-t-0">
+                <label class="form-section-label text-slate-600 dark:text-slate-400">(1) ⏰ 排便時間點</label>
+                <input type="time" class="bowel-time-of-day w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 rounded-md mt-2" value="${record.bowelTimeOfDay || ''}">
+            </div>
+
+            <!-- (2) 布里斯托大便分類法 -->
+            <div class="form-section">
+                <label class="form-section-label text-slate-600 dark:text-slate-400">(2) 💩 布里斯托大便分類法</label>
+                <div class="grid grid-cols-3 gap-2 mt-2">${bristolData.map(item => `<div class="bristol-item p-2 rounded-lg border-2 border-slate-200 dark:border-slate-600 cursor-pointer text-center flex flex-col justify-start items-center ${record.types.includes(item.type) ? 'bristol-selected' : ''}" data-type="${item.type}" tabindex="0"><svg viewBox="0 0 24 18" class="w-12 h-10 mx-auto mb-1">${item.svg}</svg><p class="font-semibold text-xs text-slate-800 dark:text-slate-200">類型 ${item.type}</p><p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">${item.d}</p></div>`).join('')}</div>
+            </div>
+
+            ${createOptionGroup('(3) 🎨 顏色', 'color-options', bowelColorData.map(c => c.name), record.color, false, true)}
+            
+            <div class="grid grid-cols-2 gap-3">
+                ${createOptionGroup('(4) 📏 排便量', 'volume-options', bowelVolumes, record.volume, false)}
+                ${createOptionGroup('(5) ⏱️ 排便耗時', 'duration-options', bowelDurations, record.duration, false)}
+            </div>
+            
+            ${createOptionGroup('(6) 😖 症狀', 'symptoms-options', bowelSymptoms, record.symptoms, true)}
+            ${createOptionGroup('(7) ✨ 附加狀態', 'status-options', bowelAdditionalStatus, record.additionalStatus, true)}
+            
+            <div class="form-section">
+                <label class="form-section-label text-slate-600 dark:text-slate-400">(8) 🗒️ 備註</label>
+                <textarea class="bowel-notes w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 rounded-md mt-2">${record.notes || ''}</textarea>
+            </div>
+        </div>
+    </div>`;
     }
-    function createOptionGroup(label, className, options, selectedValues, isMultiSelect) {
-      const groupClass = isMultiSelect ? `option-button-group ${className} multi-select-group flex flex-wrap gap-2` : `option-button-group ${className} flex flex-wrap gap-2`;
-      const buttons = options.map(opt => `<button type="button" class="option-button text-sm py-1 px-3 rounded-full border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 ${(Array.isArray(selectedValues) ? selectedValues.includes(opt) : opt === selectedValues) ? 'selected' : ''}" data-value="${opt}">${opt}</button>`).join('');
-      return `<div class="form-section border-slate-200 dark:border-slate-700"><label class="form-section-label text-sm text-slate-600 dark:text-slate-400">${label}</label><div class="${groupClass}">${buttons}</div></div>`;
+
+    function createOptionGroup(label, className, options, selectedValues, isMultiSelect, isColorGrid = false) {
+        const groupClass = isMultiSelect ? `option-button-group ${className} multi-select-group flex flex-wrap gap-2` : `option-button-group ${className} flex flex-wrap gap-2`;
+        let buttons;
+
+        if (isColorGrid) {
+            buttons = `<div class="color-options grid grid-cols-3 gap-2 mt-2">${bowelColorData.map(color => `<div class="color-item p-2 rounded-lg border-2 border-slate-200 dark:border-slate-600 cursor-pointer text-center flex flex-col items-center justify-center ${selectedValues === color.name ? 'bristol-selected' : ''}" data-value="${color.name}"><div class="w-10 h-10 rounded-full mb-1" style="background-color:${color.colorHex};"></div><p class="text-xs text-slate-600 dark:text-slate-400">${color.name}</p></div>`).join('')}</div>`;
+            return `<div class="form-section"><label class="form-section-label text-slate-600 dark:text-slate-400">${label}</label>${buttons}</div>`;
+        } else {
+            buttons = options.map(opt => `<button type="button" class="option-button text-sm py-1 px-3 rounded-full border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 ${(Array.isArray(selectedValues) ? selectedValues.includes(opt) : opt === selectedValues) ? 'selected' : ''}" data-value="${opt}">${opt}</button>`).join('');
+            return `<div class="form-section"><label class="form-section-label text-slate-600 dark:text-slate-400">${label}</label><div class="${groupClass} mt-2">${buttons}</div></div>`;
+        }
     }
+
 
     function getBowelStatus(types) {
         if (!types || types.length === 0) return null;
@@ -614,7 +662,7 @@
       DOM.historyList.innerHTML = filteredDates.map(date => {
         const log = appState.dailyLogs[date];
         const sleep = log.sleep > 0 ? `${'★'.repeat(log.sleep)}${'☆'.repeat(5 - log.sleep)}` : '未記錄';
-        const nightVisits = (log.nightToiletVisits !== undefined && log.nightToiletVisits > 0) ? `${log.nightToiletVisits} 次` : '0 次';
+        const nightVisits = (log.nightToiletVisits !== undefined && log.nightToiletVisits > -1) ? `${log.nightToiletVisits} 次` : '0 次';
         const rbdText = log.rbd.symptoms.length > 0 ? log.rbd.symptoms.map(id => rbdSymptomsList.find(s => s.id === id)?.label || id).join('、 ') : '無';
         
         return `<div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -920,6 +968,16 @@
       DOM.exportCsvBtn.addEventListener('click', exportDataAsCsv); 
       DOM.importCsvBtn.addEventListener('click', () => DOM.importFileInput.click());
       DOM.importFileInput.addEventListener('change', importData);
+      DOM.deleteAllDataBtn.addEventListener('click', () => {
+          showConfirmation('刪除全部資料', '您確定要刪除所有日誌紀錄嗎？此操作將無法復原！', () => {
+              appState.dailyLogs = {};
+              appState.commonMeds = []; // Also clear common meds as they are part of user data
+              saveData();
+              renderHistoryList();
+              populateWeekFilter();
+              showToast('所有資料已成功刪除！', 'success');
+          });
+      });
       DOM.themeToggle.addEventListener('click', toggleTheme);
       DOM.modalCancelBtn.addEventListener('click', () => DOM.confirmationModal.classList.add('hidden'));
       DOM.colorModalCloseBtn.addEventListener('click', () => DOM.colorInfoModal.classList.add('hidden'));
