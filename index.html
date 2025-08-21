@@ -73,10 +73,12 @@
     .star-rating .star { color: #d1d5db; cursor: pointer; transition: color 0.2s; }
     .star-rating .star:hover, .star-rating .star.selected { color: #f59e0b; }
 
-    .custom-radio:checked {
-      background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");
+    .custom-checkbox:checked, .custom-radio:checked {
       background-color: #3B82F6;
       border-color: #3B82F6;
+    }
+     .custom-radio:checked {
+      background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");
     }
 
     .option-button-group .option-button { transition: all 0.2s ease-in-out; }
@@ -106,6 +108,7 @@
     .status-badge-green { background-color: #D1FAE5; color: #065F46; }
     .status-badge-orange { background-color: #FFEDD5; color: #9A3412; }
     .status-badge-blue { background-color: #DBEAFE; color: #1E40AF; }
+    .status-badge-red { background-color: #FEE2E2; color: #991B1B; }
     
     .empty-state {
         text-align: center;
@@ -121,10 +124,29 @@
     .empty-state svg {
         margin: 0 auto 12px;
     }
+    #loading-overlay {
+        position: absolute;
+        inset: 0;
+        background-color: rgba(255, 255, 255, 0.8);
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 1rem;
+        transition: opacity 0.3s;
+    }
+    html.dark #loading-overlay {
+        background-color: rgba(15, 23, 42, 0.8);
+    }
   </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-950 transition-colors duration-300">
   <div id="app" class="max-w-lg mx-auto bg-slate-50 dark:bg-slate-900 min-h-screen shadow-lg relative transition-colors duration-300 overflow-x-hidden">
+    <div id="loading-overlay">
+        <svg class="spinner w-12 h-12 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        <p class="text-slate-700 dark:text-slate-300 font-semibold">正在載入資料...</p>
+    </div>
     <header id="app-header" class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm sticky top-0 z-10 shadow-sm transition-colors duration-300">
       <div id="app-header-top" class="text-slate-800 dark:text-slate-200 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
         <div class="w-10 h-10"></div> <!-- Placeholder for alignment -->
@@ -172,6 +194,22 @@
                 <button id="add-bowel-record-btn" class="w-full mt-2 text-blue-600 font-semibold py-2 px-4 rounded-lg border-2 border-dashed border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/50 transition flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                   新增一筆排便紀錄
+                </button>
+            </div>
+          </section>
+
+          <!-- UPDATED: Swallowing Record Section -->
+          <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
+            <h2 class="text-lg font-semibold">🍲 吞嚥紀錄</h2>
+            <div id="swallowing-status-options" class="option-button-group flex gap-2">
+                <button type="button" class="option-button w-full py-2" data-value="yes">今天有嗆到</button>
+                <button type="button" class="option-button w-full py-2" data-value="no">今天無嗆到</button>
+            </div>
+            <div id="swallowing-details-section" class="hidden">
+                <div id="swallowing-records-container" class="space-y-5 mt-4"></div>
+                <button id="add-swallowing-record-btn" class="w-full mt-2 text-teal-600 font-semibold py-2 px-4 rounded-lg border-2 border-dashed border-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/50 transition flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  新增一筆嗆到事件
                 </button>
             </div>
           </section>
@@ -233,12 +271,8 @@
       <div id="history-page" class="page">
         <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm text-slate-800 dark:text-slate-200">
           <h2 class="text-lg font-semibold mb-4">🗂️ 資料管理</h2>
-          <p id="last-backup-info" class="text-xs text-center text-slate-500 dark:text-slate-400 mb-4"></p>
+          <p id="user-id-info" class="text-xs text-center text-slate-500 dark:text-slate-400 mb-4"></p>
           <div class="space-y-2 mb-4">
-            <button id="manage-meds-btn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
-              管理常用藥物
-            </button>
             <div class="grid grid-cols-2 gap-2">
                 <button id="import-csv-btn" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -249,9 +283,13 @@
                     匯出為 CSV
                 </button>
             </div>
+             <button id="manage-meds-btn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center mt-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
+              管理常用藥物
+            </button>
             <button id="delete-all-data-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center mt-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
-                刪除全部資料
+                刪除雲端全部資料
             </button>
           </div>
           <input type="file" id="import-file-input" class="hidden" accept=".csv, text/csv"/>
@@ -305,12 +343,24 @@
 
   </div>
 
-  <script>
-  document.addEventListener('DOMContentLoaded', () => {
+  <script type="module">
+    // Firebase SDK imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, writeBatch, getDocs, arrayUnion, arrayRemove, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    document.addEventListener('DOMContentLoaded', () => {
     dayjs.extend(dayjs_plugin_relativeTime);
     dayjs.extend(dayjs_plugin_customParseFormat);
     dayjs.extend(dayjs_plugin_weekOfYear);
     dayjs.locale('zh-tw');
+
+    // --- Firebase Variables ---
+    let db, auth;
+    let userId;
+    let healthLogsUnsubscribe = null;
+    let settingsUnsubscribe = null;
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
     function cleanInvisible(str) {
       if (str === null || str === undefined) return '';
@@ -350,19 +400,34 @@
       { id: 'sleep-talking', label: '激動夢話' }, { id: 'self-injury', label: '使自己受傷' },
       { id: 'partner-injury', label: '使伴侶受傷' }, { id: 'other', label: '其他' }
     ];
+    // NEW: Swallowing Record Data
+    const swallowingContexts = ['單獨', '與人聊天', '走動中', '看螢幕'];
+    const swallowingPostures = ['坐直≥90°', '半躺', '走動'];
+    const swallowingDrinkTypes = ['清水', '茶', '湯（稀）', '濃稠飲（增稠後）'];
+    const swallowingSolidTypes = ['乾硬（餅乾/花生）', '纖維多（菜葉）', '鬆散（米飯）', '黏稠（年糕、麻糬）', '軟質（蒸蛋）', '絞碎', '泥狀'];
+    const swallowingMedTypes = ['整顆', '碾碎', '含服', '搭水量'];
+    const swallowingPortions = ['小口', '中', '大口'];
+    const swallowingSpeeds = ['慢', '中', '快'];
+    const swallowingDistractions = ['是', '否'];
+    const swallowingSymptoms = ['突然咳', '嗆咳連續>30秒', '流淚', '噁心/嘔吐', '胸口悶', '聲音沙啞', '吞嚥疼痛'];
+    const swallowingSeverities = ['輕', '中', '重'];
+    const swallowingActions = ['暫停進食', '少量分次喝水', '調姿（坐直/下巴微收）', '背部拍擊', '腹部擠壓（僅完全阻塞時）', '停止當次用餐'];
+    const swallowingResults = ['自行恢復', '仍不適→就醫', '當天後續症狀（發燒、喘、持續咳嗽）'];
+
 
     let appState = {
       dailyLogs: {},
       commonMeds: [],
-      lastBackupDate: null,
       currentDate: dayjs().format('YYYY-MM-DD'),
       currentPage: 'log-page',
-      charts: { bowel: null, rbd: null, bowelTime: null, sleep: null, nightToilet: null },
+      charts: { bowel: null, rbd: null, bowelTime: null, sleep: null, nightToilet: null, swallowing: null },
       statsWeekOffset: 0,
+      isAuthReady: false,
     };
 
     const DOM = {
       html: document.documentElement,
+      loadingOverlay: document.getElementById('loading-overlay'),
       headerTitle: document.getElementById('header-title'),
       pages: document.querySelectorAll('.page'),
       navItems: document.querySelectorAll('.nav-item'),
@@ -372,6 +437,11 @@
       bowelRecordsSection: document.getElementById('bowel-records-section'),
       bowelRecordsContainer: document.getElementById('bowel-records-container'),
       addBowelRecordBtn: document.getElementById('add-bowel-record-btn'),
+      // UPDATED: Swallowing DOM elements
+      swallowingStatusOptions: document.getElementById('swallowing-status-options'),
+      swallowingDetailsSection: document.getElementById('swallowing-details-section'),
+      swallowingRecordsContainer: document.getElementById('swallowing-records-container'),
+      addSwallowingRecordBtn: document.getElementById('add-swallowing-record-btn'),
       sleepQualityRating: document.getElementById('sleep-quality-rating'),
       nightToiletVisits: document.getElementById('night-toilet-visits'),
       rbdSymptoms: document.getElementById('rbd-symptoms'),
@@ -386,7 +456,7 @@
       statsContent: document.getElementById('stats-content'),
       historyList: document.getElementById('history-list'),
       weekFilter: document.getElementById('week-filter'),
-      lastBackupInfo: document.getElementById('last-backup-info'),
+      userIdInfo: document.getElementById('user-id-info'),
       statsWeekTitle: document.getElementById('stats-week-title'),
       prevWeekBtn: document.getElementById('prev-week-btn'),
       nextWeekBtn: document.getElementById('next-week-btn'),
@@ -415,17 +485,67 @@
       themeIconMoon: document.getElementById('theme-icon-moon'),
     };
     
+    // --- Initialization ---
     function init() {
       setupPWA();
       setupTheme();
-      loadData();
+      initFirebase(); // New Firebase initialization
       renderStaticComponents();
       setupEventListeners();
       setupGestureListeners(); 
       DOM.logDate.value = dayjs(appState.currentDate).format('YYYY-MM-DD');
-      loadLogForDate(appState.currentDate);
       navigateTo('log-page');
     }
+
+    // --- FIX START: Robust Firebase Initialization ---
+    async function initFirebase() {
+        try {
+            // 1. Check if the global config variable exists and is not empty.
+            if (typeof __firebase_config === 'undefined' || !__firebase_config) {
+                throw new Error("Firebase configuration (`__firebase_config`) is missing.");
+            }
+            
+            const firebaseConfig = JSON.parse(__firebase_config);
+
+            // 2. A basic check to see if the config object has essential keys.
+            if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+                 throw new Error("Firebase configuration is invalid or incomplete. Missing apiKey or projectId.");
+            }
+
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            setLogLevel('debug');
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    console.log("User is signed in with UID:", userId);
+                    appState.isAuthReady = true;
+                    loadData(); // Load data once authenticated
+                } else {
+                    console.log("No user signed in, attempting to sign in...");
+                    try {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (error) {
+                        console.error("Firebase sign-in failed:", error);
+                        showToast('無法連接到雲端服務', 'error');
+                        DOM.loadingOverlay.style.display = 'none';
+                    }
+                }
+            });
+        } catch (error) {
+            console.error("Firebase initialization failed:", error);
+            // Provide a more user-friendly message that hints at a configuration issue.
+            showToast('應用程式初始化失敗，請確認設定。', 'error');
+            DOM.loadingOverlay.style.display = 'none';
+        }
+    }
+    // --- FIX END ---
 
     function setupPWA() {
         const manifest = {
@@ -445,65 +565,112 @@
     }
 
     function loadData() {
-      try {
-        const dataStr = localStorage.getItem('healthLogApp');
-        if (dataStr) {
-            const data = JSON.parse(dataStr);
-            if (data.logs) {
-                appState.dailyLogs = data.logs;
-                appState.lastBackupDate = data.lastUpdated;
-                appState.commonMeds = data.commonMeds || [];
-            } else { // Handle very old format without logs wrapper
-                appState.dailyLogs = data;
-                appState.lastBackupDate = null;
+        if (!appState.isAuthReady || !userId) {
+            console.log("Auth not ready, skipping data load.");
+            return;
+        }
+
+        // Unsubscribe from previous listeners if they exist
+        if (healthLogsUnsubscribe) healthLogsUnsubscribe();
+        if (settingsUnsubscribe) settingsUnsubscribe();
+
+        // --- Listener for Health Logs ---
+        const logsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'healthLogs');
+        healthLogsUnsubscribe = onSnapshot(query(logsCollectionRef), (snapshot) => {
+            console.log("Received health logs snapshot.");
+            const newLogs = {};
+            snapshot.forEach(doc => {
+                newLogs[doc.id] = doc.data();
+            });
+            appState.dailyLogs = newLogs;
+
+            // Update UI based on new data
+            loadLogForDate(appState.currentDate);
+            if (appState.currentPage === 'history-page') {
+                populateWeekFilter();
+                renderHistoryList(DOM.weekFilter.value);
+            }
+            if (appState.currentPage === 'stats-page') {
+                updateCharts();
+            }
+
+            DOM.loadingOverlay.style.opacity = '0';
+            setTimeout(() => DOM.loadingOverlay.style.display = 'none', 300);
+
+        }, (error) => {
+            console.error("Error fetching health logs:", error);
+            showToast('讀取日誌資料失敗', 'error');
+        });
+
+        // --- Listener for Settings (Common Meds) ---
+        const settingsDocRef = doc(db, 'artifacts', appId, 'users', userId, 'settings', 'userSettings');
+        settingsUnsubscribe = onSnapshot(settingsDocRef, (doc) => {
+            console.log("Received settings snapshot.");
+            if (doc.exists()) {
+                appState.commonMeds = doc.data().commonMeds || [];
+            } else {
                 appState.commonMeds = [];
             }
-        }
-      } catch (error) { console.error("無法讀取 localStorage 資料:", error); appState.dailyLogs = {}; appState.commonMeds = []; }
+            renderCommonMeds();
+        }, (error) => {
+            console.error("Error fetching settings:", error);
+            showToast('讀取設定資料失敗', 'error');
+        });
     }
     
-    function saveData() {
-        const dataToSave = {
-            logs: appState.dailyLogs,
-            commonMeds: appState.commonMeds,
-            lastUpdated: new Date().toISOString()
-        };
-        localStorage.setItem('healthLogApp', JSON.stringify(dataToSave));
-        appState.lastBackupDate = dataToSave.lastUpdated;
-        updateLastBackupInfo();
-    }
-
     function getEmptyLog() {
-      return { hadBowelMovement: false, bowel: [], sleep: 0, nightToiletVisits: -1, rbd: { symptoms: [], other: '' }, meds: '', dailyNotes: '' };
+      return { hadBowelMovement: false, bowel: [], hadSwallowingEvent: false, swallowing: [], sleep: 0, nightToiletVisits: -1, rbd: { symptoms: [], other: '' }, meds: '', dailyNotes: '' };
     }
     function getEmptyBowelRecord() {
       return { id: Date.now(), bowelTimeOfDay: '', types: [], color: '', volume: '', duration: '', notes: '', symptoms: [], additionalStatus: [] };
+    }
+    function getEmptySwallowingRecord() {
+        return {
+            id: Date.now(),
+            time: '',
+            context: '',
+            posture: '',
+            drinkType: '',
+            solidType: '',
+            medType: '',
+            portion: '',
+            speed: '',
+            distraction: '',
+            symptoms: [],
+            severity: '',
+            action: '',
+            result: '',
+            notes: ''
+        };
     }
 
     function loadLogForDate(date) {
       const log = appState.dailyLogs[date] || getEmptyLog();
       
       DOM.bowelStatusOptions.querySelectorAll('.option-button').forEach(btn => {
-          btn.classList.remove('selected');
-          if ((log.hadBowelMovement && btn.dataset.value === 'yes') || (!log.hadBowelMovement && btn.dataset.value === 'no')) {
-              btn.classList.add('selected');
-          }
+          btn.classList.toggle('selected', (log.hadBowelMovement && btn.dataset.value === 'yes') || (!log.hadBowelMovement && btn.dataset.value === 'no'));
       });
-
       toggleBowelSection(log.hadBowelMovement);
-      renderBowelForms(log.bowel);
+      renderBowelForms(log.bowel || []);
+
+      DOM.swallowingStatusOptions.querySelectorAll('.option-button').forEach(btn => {
+          btn.classList.toggle('selected', (log.hadSwallowingEvent && btn.dataset.value === 'yes') || (!log.hadSwallowingEvent && btn.dataset.value === 'no'));
+      });
+      toggleSwallowingSection(log.hadSwallowingEvent);
+      renderSwallowingForms(log.swallowing || []);
+      
       updateStars(log.sleep);
       DOM.nightToiletVisits.querySelectorAll('.option-button').forEach(btn => {
         btn.classList.toggle('selected', parseInt(btn.dataset.value, 10) === log.nightToiletVisits);
       });
       const rbdCheckboxes = DOM.rbdSymptoms.querySelectorAll('input[type="checkbox"]');
       rbdCheckboxes.forEach(input => {
-        input.checked = log.rbd.symptoms.includes(input.id);
+        input.checked = log.rbd?.symptoms?.includes(input.id) || false;
         input.disabled = false;
       });
       updateRbdCheckboxStates();
-      DOM.rbdOtherNotes.value = log.rbd.other;
-      DOM.rbdOtherNotes.classList.toggle('hidden', !log.rbd.symptoms.includes('other'));
+      DOM.rbdOtherNotes.value = log.rbd?.other || '';
+      DOM.rbdOtherNotes.classList.toggle('hidden', !log.rbd?.symptoms?.includes('other'));
       DOM.medicationLog.value = log.meds;
       DOM.dailyNotes.value = log.dailyNotes;
       renderCommonMeds();
@@ -511,19 +678,22 @@
 
     async function saveLogForDate(date) {
         if (!validateLogForm()) return;
+        if (!appState.isAuthReady || !userId) {
+            showToast('無法儲存，使用者未登入', 'error');
+            return;
+        }
+
         triggerHapticFeedback();
         const originalContent = DOM.saveLogButtonContent.innerHTML;
         DOM.saveLogButton.disabled = true;
         DOM.saveLogButtonContent.innerHTML = `<svg class="spinner w-6 h-6 mr-2 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>儲存中...`;
-        await new Promise(resolve => setTimeout(resolve, 500));
         
-        const selectedBowelStatus = DOM.bowelStatusOptions.querySelector('.selected')?.dataset.value;
-        const hadBowelMovement = selectedBowelStatus === 'yes';
-        
+        // --- Gather Bowel Data ---
+        const hadBowelMovement = DOM.bowelStatusOptions.querySelector('.selected')?.dataset.value === 'yes';
         let bowelRecords = [];
         if (hadBowelMovement) {
             document.querySelectorAll('.bowel-record-form').forEach(form => {
-                const getSelected = (className) => Array.from(form.querySelectorAll(`.${className} .selected`)).map(btn => btn.dataset.value);
+                const getSelected = (container) => Array.from(container.querySelectorAll('.selected')).map(btn => btn.dataset.value);
                 bowelRecords.push({
                     id: form.dataset.id,
                     bowelTimeOfDay: form.querySelector('.bowel-time-of-day').value,
@@ -532,15 +702,43 @@
                     volume: form.querySelector('.volume-options .selected')?.dataset.value || '',
                     duration: form.querySelector('.duration-options .selected')?.dataset.value || '',
                     notes: form.querySelector('.bowel-notes').value,
-                    symptoms: getSelected('symptoms-options'),
-                    additionalStatus: getSelected('status-options')
+                    symptoms: getSelected(form.querySelector('.symptoms-options')),
+                    additionalStatus: getSelected(form.querySelector('.status-options'))
                 });
             });
         }
 
-        appState.dailyLogs[date] = {
-            hadBowelMovement: hadBowelMovement,
+        // --- Gather Swallowing Data ---
+        const hadSwallowingEvent = DOM.swallowingStatusOptions.querySelector('.selected')?.dataset.value === 'yes';
+        let swallowingRecords = [];
+        if (hadSwallowingEvent) {
+            document.querySelectorAll('.swallowing-record-form').forEach(form => {
+                const getSelectedValues = (selector) => Array.from(form.querySelectorAll(`${selector}:checked`)).map(el => el.value);
+                swallowingRecords.push({
+                    id: form.dataset.id,
+                    time: form.querySelector('.swallowing-time').value,
+                    context: getSelectedValues('input[name^="swallowing-context-"]:checked')[0] || '',
+                    posture: getSelectedValues('input[name^="swallowing-posture-"]:checked')[0] || '',
+                    drinkType: getSelectedValues('input[name^="swallowing-drinkType-"]:checked')[0] || '',
+                    solidType: getSelectedValues('input[name^="swallowing-solidType-"]:checked')[0] || '',
+                    medType: getSelectedValues('input[name^="swallowing-medType-"]:checked')[0] || '',
+                    portion: getSelectedValues('input[name^="swallowing-portion-"]:checked')[0] || '',
+                    speed: getSelectedValues('input[name^="swallowing-speed-"]:checked')[0] || '',
+                    distraction: getSelectedValues('input[name^="swallowing-distraction-"]:checked')[0] || '',
+                    symptoms: getSelectedValues('input[name^="swallowing-symptoms-"]:checked'),
+                    severity: getSelectedValues('input[name^="swallowing-severity-"]:checked')[0] || '',
+                    action: getSelectedValues('input[name^="swallowing-action-"]:checked')[0] || '',
+                    result: getSelectedValues('input[name^="swallowing-result-"]:checked')[0] || '',
+                    notes: form.querySelector('.swallowing-notes').value
+                });
+            });
+        }
+
+        const logData = {
+            hadBowelMovement,
             bowel: bowelRecords,
+            hadSwallowingEvent,
+            swallowing: swallowingRecords,
             sleep: DOM.sleepQualityRating.querySelectorAll('.star.selected').length,
             nightToiletVisits: parseInt(document.querySelector('#night-toilet-visits .selected')?.dataset.value, 10) ?? -1,
             rbd: {
@@ -551,13 +749,21 @@
             dailyNotes: DOM.dailyNotes.value
         };
 
-        saveData();
-        DOM.saveLogButtonContent.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="mr-2 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>儲存成功！`;
-        setTimeout(() => {
+        try {
+            const logDocRef = doc(db, 'artifacts', appId, 'users', userId, 'healthLogs', date);
+            await setDoc(logDocRef, logData, { merge: true });
+            DOM.saveLogButtonContent.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="mr-2 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>儲存成功！`;
+            setTimeout(() => {
+                DOM.saveLogButton.disabled = false;
+                DOM.saveLogButtonContent.innerHTML = originalContent;
+                showToast('本日日誌已同步至雲端！', 'success');
+            }, 1200);
+        } catch (error) {
+            console.error("Error saving log to Firestore:", error);
+            showToast('儲存失敗，請稍後再試', 'error');
             DOM.saveLogButton.disabled = false;
             DOM.saveLogButtonContent.innerHTML = originalContent;
-            showToast('本日日誌已儲存！', 'success');
-        }, 1200);
+        }
     }
 
     function renderStaticComponents() {
@@ -579,36 +785,38 @@
       }
       records.forEach((record, index) => DOM.bowelRecordsContainer.insertAdjacentHTML('beforeend', createBowelFormHTML(record, index + 1)));
     }
+    function renderSwallowingForms(records = []) {
+        DOM.swallowingRecordsContainer.innerHTML = '';
+        const hadSwallowingEvent = DOM.swallowingStatusOptions.querySelector('.selected')?.dataset.value === 'yes';
+        if (records.length === 0 && hadSwallowingEvent) {
+            records.push(getEmptySwallowingRecord());
+        }
+        records.forEach((record, index) => DOM.swallowingRecordsContainer.insertAdjacentHTML('beforeend', createSwallowingFormHTML(record, index + 1)));
+    }
+
     function createBowelFormHTML(record, index) {
       return `<div class="bowel-record-form border-t-2 border-slate-200 dark:border-slate-700 pt-4" data-id="${record.id}">
         <div class="flex justify-between items-center mb-4">
-            <h4 class="font-semibold text-md text-slate-700 dark:text-slate-300">第 ${index} 筆紀錄</h4>
+            <h4 class="font-semibold text-md text-slate-700 dark:text-slate-300">第 ${index} 筆排便紀錄</h4>
             ${index > 1 ? `<button class="remove-bowel-record-btn text-sm font-medium text-red-500 hover:text-red-700">刪除此筆</button>` : ''}
         </div>
         
         <div class="space-y-4">
-            <!-- (1) 排便時間點 -->
             <div class="form-section !mt-0 !pt-0 !border-t-0">
                 <label class="form-section-label text-slate-600 dark:text-slate-400">(1) ⏰ 排便時間點</label>
                 <input type="time" class="bowel-time-of-day w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 rounded-md mt-2" value="${record.bowelTimeOfDay || ''}">
             </div>
-
-            <!-- (2) 布里斯托大便分類法 -->
             <div class="form-section">
                 <label class="form-section-label text-slate-600 dark:text-slate-400">(2) 💩 布里斯托大便分類法</label>
                 <div class="grid grid-cols-3 gap-2 mt-2">${bristolData.map(item => `<div class="bristol-item p-2 rounded-lg border-2 border-slate-200 dark:border-slate-600 cursor-pointer text-center flex flex-col justify-start items-center ${record.types.includes(item.type) ? 'bristol-selected' : ''}" data-type="${item.type}" tabindex="0"><svg viewBox="0 0 24 18" class="w-12 h-10 mx-auto mb-1">${item.svg}</svg><p class="font-semibold text-xs text-slate-800 dark:text-slate-200">類型 ${item.type}</p><p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">${item.d}</p></div>`).join('')}</div>
             </div>
-
             ${createOptionGroup('(3) 🎨 顏色', 'color-options', bowelColorData.map(c => c.name), record.color, false, true)}
-            
             <div class="grid grid-cols-2 gap-3">
                 ${createOptionGroup('(4) 📏 排便量', 'volume-options', bowelVolumes, record.volume, false)}
                 ${createOptionGroup('(5) ⏱️ 排便耗時', 'duration-options', bowelDurations, record.duration, false)}
             </div>
-            
             ${createOptionGroup('(6) 😖 症狀', 'symptoms-options', bowelSymptoms, record.symptoms, true)}
             ${createOptionGroup('(7) ✨ 附加狀態', 'status-options', bowelAdditionalStatus, record.additionalStatus, true)}
-            
             <div class="form-section">
                 <label class="form-section-label text-slate-600 dark:text-slate-400">(8) 🗒️ 備註</label>
                 <textarea class="bowel-notes w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 rounded-md mt-2">${record.notes || ''}</textarea>
@@ -616,6 +824,67 @@
         </div>
     </div>`;
     }
+
+    function createSwallowingFormHTML(record, index) {
+        const id = record.id || Date.now();
+        const createRadioGroup = (label, name, options, selected) => `
+            <div class="form-section">
+                <label class="form-section-label text-slate-600 dark:text-slate-400">${label}</label>
+                <div class="flex flex-wrap gap-x-4 gap-y-2 mt-2">
+                    ${options.map(opt => `<label class="flex items-center text-sm"><input type="radio" name="${name}-${id}" value="${opt}" class="custom-radio mr-2" ${opt === selected ? 'checked' : ''}>${opt}</label>`).join('')}
+                </div>
+            </div>`;
+        
+        const createCheckboxGroup = (label, name, options, selected) => `
+            <div class="form-section">
+                <label class="form-section-label text-slate-600 dark:text-slate-400">${label}</label>
+                <div class="flex flex-wrap gap-x-4 gap-y-2 mt-2">
+                    ${options.map(opt => `<label class="flex items-center text-sm"><input type="checkbox" name="${name}-${id}" value="${opt}" class="custom-checkbox mr-2" ${selected.includes(opt) ? 'checked' : ''}>${opt}</label>`).join('')}
+                </div>
+            </div>`;
+
+        return `
+        <div class="swallowing-record-form border-t-2 border-teal-200 dark:border-teal-700 pt-4" data-id="${id}">
+            <div class="flex justify-between items-center mb-4">
+                <h4 class="font-semibold text-md text-teal-700 dark:text-teal-300">第 ${index} 筆嗆到事件</h4>
+                <button class="remove-swallowing-record-btn text-sm font-medium text-red-500 hover:text-red-700">刪除此筆</button>
+            </div>
+            <div class="space-y-4">
+                <div class="form-section !mt-0 !pt-0 !border-t-0">
+                    <label class="form-section-label text-slate-600 dark:text-slate-400">⏰ 事件時間</label>
+                    <input type="time" class="swallowing-time w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 rounded-md mt-2" value="${record.time || ''}">
+                </div>
+                ${createRadioGroup('🍽️ 用餐/喝水情境', 'swallowing-context', swallowingContexts, record.context)}
+                ${createRadioGroup('🧘 姿勢', 'swallowing-posture', swallowingPostures, record.posture)}
+                
+                <div class="form-section">
+                    <label class="form-section-label text-slate-600 dark:text-slate-400">🍲 食物/飲品類型</label>
+                    <div class="pl-4 mt-2 space-y-3 border-l-2 dark:border-slate-600">
+                        ${createRadioGroup('💧 飲水', 'swallowing-drinkType', swallowingDrinkTypes, record.drinkType)}
+                        ${createRadioGroup('🍚 固體', 'swallowing-solidType', swallowingSolidTypes, record.solidType)}
+                        ${createRadioGroup('💊 藥物', 'swallowing-medType', swallowingMedTypes, record.medType)}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    ${createRadioGroup('🤏 份量', 'swallowing-portion', swallowingPortions, record.portion)}
+                    ${createRadioGroup('🏃‍♀️ 速度', 'swallowing-speed', swallowingSpeeds, record.speed)}
+                </div>
+
+                ${createRadioGroup('🗣️ 發生時是否說話/大笑/分心', 'swallowing-distraction', swallowingDistractions, record.distraction)}
+                ${createCheckboxGroup('🥵 嗆咳/嗆到症狀', 'swallowing-symptoms', swallowingSymptoms, record.symptoms)}
+                ${createRadioGroup('📊 嚴重度分級', 'swallowing-severity', swallowingSeverities, record.severity)}
+                ${createRadioGroup('️ 現場處置', 'swallowing-action', swallowingActions, record.action)}
+                ${createRadioGroup('📈 結果', 'swallowing-result', swallowingResults, record.result)}
+                
+                <div class="form-section">
+                    <label class="form-section-label text-slate-600 dark:text-slate-400">🗒️ 備註 (可能誘因)</label>
+                    <textarea class="swallowing-notes w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 rounded-md mt-2" placeholder="太乾、太大口、邊講話、假牙鬆、藥錠太大等...">${record.notes || ''}</textarea>
+                </div>
+            </div>
+        </div>`;
+    }
+
 
     function createOptionGroup(label, className, options, selectedValues, isMultiSelect, isColorGrid = false) {
         const groupClass = isMultiSelect ? `option-button-group ${className} multi-select-group flex flex-wrap gap-2` : `option-button-group ${className} flex flex-wrap gap-2`;
@@ -648,7 +917,7 @@
         : sortedDates.filter(date => {
             const [year, week] = filterWeek.split('-');
             return dayjs(date).year() == year && dayjs(date).week() == week;
-        });
+          });
 
       if (filteredDates.length === 0) {
         DOM.historyList.innerHTML = `<div class="empty-state">
@@ -663,8 +932,20 @@
         const log = appState.dailyLogs[date];
         const sleep = log.sleep > 0 ? `${'★'.repeat(log.sleep)}${'☆'.repeat(5 - log.sleep)}` : '未記錄';
         const nightVisits = (log.nightToiletVisits !== undefined && log.nightToiletVisits > -1) ? `${log.nightToiletVisits} 次` : '0 次';
-        const rbdText = log.rbd.symptoms.length > 0 ? log.rbd.symptoms.map(id => rbdSymptomsList.find(s => s.id === id)?.label || id).join('、 ') : '無';
+        const rbdText = log.rbd?.symptoms?.length > 0 ? log.rbd.symptoms.map(id => rbdSymptomsList.find(s => s.id === id)?.label || id).join('、 ') : '無';
         
+        const swallowingSummary = !log.hadSwallowingEvent 
+            ? '<span class="text-slate-500 dark:text-slate-400 ml-5">當日無嗆到</span>'
+            : (log.swallowing && log.swallowing.length > 0 
+                ? `<ul class="list-none pl-5 space-y-1">${log.swallowing.map(s => {
+                    const severityBadge = s.severity ? `<span class="status-badge ${s.severity === '重' ? 'status-badge-red' : (s.severity === '中' ? 'status-badge-orange' : 'status-badge-blue')}">${s.severity}</span>` : '';
+                    return `<li class="border-l-2 border-teal-200 dark:border-teal-700 pl-2">
+                        <div class="flex items-center text-xs gap-2">${s.time ? `<b>${s.time}</b>` : ''}${severityBadge}</div>
+                        <div class="text-slate-500 dark:text-slate-400 text-[11px]">${[s.context, s.solidType, s.drinkType].filter(Boolean).join(', ')}</div>
+                    </li>`;
+                  }).join('')}</ul>`
+                : '<span class="text-slate-500 dark:text-slate-400 ml-5">有嗆到，但未記錄</span>');
+
         return `<div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
             <div class="flex justify-between items-center mb-3">
                 <p class="font-bold text-lg text-slate-800 dark:text-slate-200">${dayjs(date).format('YYYY/MM/DD')}</p>
@@ -683,18 +964,22 @@
                                     <div class="flex items-center text-xs gap-2">${b.bowelTimeOfDay ? `<b>${b.bowelTimeOfDay}</b>` : ''}${statusBadge}</div>
                                     <div class="text-slate-500 dark:text-slate-400 text-[11px]">類型 ${Array.isArray(b.types) && b.types.length ? b.types.join(', ') : '?'} (${b.color || 'N/A'}, ${b.volume || 'N/A'})</div>
                                 </li>`;
-                    }).join('')}</ul>` : '<span class="text-slate-500 dark:text-slate-400 ml-5">未記錄</span>')}
+                    }).join('')}</ul>` : '<span class="text-slate-500 dark:text-slate-400 ml-5">有排便，但未記錄</span>')}
+                </div>
+                 <div>
+                    <p class="mb-1">🍲 <b class="font-semibold">吞嚥紀錄:</b></p> 
+                    ${swallowingSummary}
                 </div>
             </div>
         </div>`;
       }).join('');
     }
 
-    function updateLastBackupInfo() {
-        if (appState.lastBackupDate) {
-            DOM.lastBackupInfo.textContent = `最後備份於：${dayjs(appState.lastBackupDate).format('YYYY/MM/DD HH:mm:ss')}`;
+    function updateUserIdInfo() {
+        if (userId) {
+            DOM.userIdInfo.textContent = `使用者 ID: ${userId}`;
         } else {
-            DOM.lastBackupInfo.textContent = '尚未有任何備份紀錄。';
+            DOM.userIdInfo.textContent = '使用者未登入';
         }
     }
 
@@ -728,6 +1013,11 @@
         </section>
         <section id="bowel-analysis-section" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200"></section>
         <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
+          <h3 class="text-lg font-semibold">🍲 吞嚥事件統計</h3>
+          <div class="relative h-64 md:h-80"><canvas id="swallowing-chart"></canvas></div>
+          <div id="stats-summary-swallowing" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
+        </section>
+        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
           <h3 class="text-lg font-semibold">😴 睡眠品質趨勢</h3>
           <div class="relative h-64 md:h-80"><canvas id="sleep-chart"></canvas></div>
           <div id="stats-summary-sleep" class="text-sm text-center text-slate-500 dark:text-slate-400 pt-2"></div>
@@ -756,6 +1046,7 @@
       // Re-assign DOM elements after re-rendering
       DOM.aiInsightText = document.getElementById('ai-insight-text');
       DOM.bowelAnalysisSection = document.getElementById('bowel-analysis-section');
+      DOM.statsSummarySwallowing = document.getElementById('stats-summary-swallowing');
       DOM.statsSummarySleep = document.getElementById('stats-summary-sleep');
       DOM.statsSummaryNightToilet = document.getElementById('stats-summary-night-toilet');
       DOM.statsSummaryBowel = document.getElementById('stats-summary-bowel');
@@ -764,6 +1055,7 @@
       
       generateHealthInsights(weekData); 
       updateBowelAnalysis(weekStart);
+      updateSwallowingChart(weekStart, weekData);
       updateSleepChart(weekStart, weekData);
       updateNightToiletChart(weekStart, weekData);
       updateBowelTimeChart(weekStart, weekData);
@@ -773,7 +1065,7 @@
     }
 
     function getWeekData(weekStart) {
-        const data = { labels: [], sleep: [], nightToilet: [], bowel: [], bowelCount: [], rbd: [], dates: [] };
+        const data = { labels: [], sleep: [], nightToilet: [], bowel: [], bowelCount: [], rbd: [], swallowingCount: [], dates: [] };
         for (let i = 0; i < 7; i++) {
             const date = weekStart.add(i, 'day');
             const dateStr = date.format('YYYY-MM-DD');
@@ -785,28 +1077,40 @@
             data.bowel.push(log && log.bowel && log.bowel.length > 0 ? log.bowel.flatMap(b => b.types) : null);
             data.bowelCount.push(log && log.bowel ? log.bowel.length : 0);
             data.rbd.push(log && log.rbd && log.rbd.symptoms.length > 0 && !log.rbd.symptoms.includes('none') ? log.rbd.symptoms.length : 0);
+            data.swallowingCount.push(log && log.swallowing ? log.swallowing.length : 0);
         }
         return data;
     }
 
     function generateHealthInsights(weekData) {
         if (!DOM.aiInsightText) return;
-        const totalBowelMovements = weekData.bowelCount.reduce((a, b) => a + b, 0);
         
+        const daysInPeriod = 7;
+
+        const totalBowelMovements = weekData.bowelCount.reduce((a, b) => a + b, 0);
+        const avgBowelMovements = (totalBowelMovements / daysInPeriod).toFixed(1);
+
+        const totalSwallowingEvents = weekData.swallowingCount.reduce((a, b) => a + b, 0);
+        const avgSwallowingEvents = (totalSwallowingEvents / daysInPeriod).toFixed(1);
+
         const validSleep = weekData.sleep.filter(s => s > 0);
         const avgSleepText = validSleep.length > 0 
             ? `平均 ${ (validSleep.reduce((a, b) => a + b, 0) / validSleep.length).toFixed(1) } 顆星`
             : '無紀錄';
 
         const totalNightToilet = weekData.nightToilet.filter(n => n !== null).reduce((a, b) => a + b, 0);
+        const avgNightToilet = (totalNightToilet / daysInPeriod).toFixed(1);
+
         const totalRbd = weekData.rbd.reduce((a, b) => a + b, 0);
+        const avgRbd = (totalRbd / daysInPeriod).toFixed(1);
 
         DOM.aiInsightText.innerHTML = `
             <ul class="list-disc list-inside space-y-1">
-                <li>💩 <b>排便紀錄：</b>共 ${totalBowelMovements} 次</li>
+                <li>💩 <b>排便紀錄：</b>共 ${totalBowelMovements} 次 (平均每日 ${avgBowelMovements} 次)</li>
+                <li>🍲 <b>嗆到事件：</b>共 ${totalSwallowingEvents} 次 (平均每日 ${avgSwallowingEvents} 次)</li>
                 <li>😴 <b>睡眠品質：</b>${avgSleepText}</li>
-                <li>🚽 <b>起床如廁次數：</b>共 ${totalNightToilet} 次</li>
-                <li>🏃‍♂️ <b>RBD 症狀：</b>共 ${totalRbd} 次</li>
+                <li>🚽 <b>起床如廁：</b>共 ${totalNightToilet} 次 (平均每晚 ${avgNightToilet} 次)</li>
+                <li>🏃‍♂️ <b>RBD 症狀：</b>共 ${totalRbd} 次 (平均每晚 ${avgRbd} 次)</li>
             </ul>
         `;
     }
@@ -842,6 +1146,36 @@
       const prevGoodBMPercent = previousWeekStats.totalBMs > 0 ? Math.round((previousWeekStats.goodBMs / previousWeekStats.totalBMs) * 100) : 0;
       const weekLabel = appState.statsWeekOffset === 0 ? '本週' : '該週';
       DOM.bowelAnalysisSection.innerHTML = `<h3 class="text-lg font-semibold">📊 排便分析</h3><p class="text-sm text-slate-600 dark:text-slate-400"><b>上一次排便：</b> ${lastBM ? lastBM.fromNow() : '無紀錄'}</p><div class="grid grid-cols-2 gap-4 text-center"><div class="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p class="text-2xl font-bold">${currentWeekStats.totalBMs} <span class="text-sm font-normal">次</span></p><p class="text-xs text-slate-500 dark:text-slate-400">${weekLabel}</p><p class="text-xs text-slate-500 dark:text-slate-400 mt-1">相較於前7天的 ${previousWeekStats.totalBMs} 次</p></div><div class="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p class="text-2xl font-bold">${goodBMPercent}<span class="text-sm font-normal">%</span></p><p class="text-xs text-slate-500 dark:text-slate-400">${weekLabel}健康便便</p><p class="text-xs text-slate-500 dark:text-slate-400 mt-1">相較於前7天的 ${prevGoodBMPercent}%</p></div></div>`;
+    }
+    function updateSwallowingChart(weekStart, weekData) {
+        const canvas = document.getElementById('swallowing-chart');
+        if (!canvas) return;
+        const colors = getChartColors();
+        if (appState.charts.swallowing) appState.charts.swallowing.destroy();
+        appState.charts.swallowing = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: weekData.labels,
+                datasets: [{
+                    label: '嗆到次數',
+                    data: weekData.swallowingCount,
+                    backgroundColor: 'rgba(20, 184, 166, 0.6)',
+                    borderColor: 'rgba(13, 148, 136, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1, color: colors.textColor }, grid: { color: colors.gridColor } },
+                    x: { ticks: { color: colors.textColor }, grid: { color: colors.gridColor } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+        const totalEvents = weekData.swallowingCount.reduce((a, b) => a + b, 0);
+        DOM.statsSummarySwallowing.textContent = `本週共發生 ${totalEvents} 次嗆到事件。`;
     }
     function updateSleepChart(weekStart, weekData) {
       const canvas = document.getElementById('sleep-chart');
@@ -951,6 +1285,28 @@
             });
         }
       });
+      
+      DOM.swallowingStatusOptions.addEventListener('click', e => {
+        const button = e.target.closest('.option-button');
+        if (button) {
+            DOM.swallowingStatusOptions.querySelectorAll('.option-button').forEach(btn => btn.classList.remove('selected'));
+            button.classList.add('selected');
+            toggleSwallowingSection(button.dataset.value === 'yes');
+        }
+      });
+      DOM.addSwallowingRecordBtn.addEventListener('click', () => {
+          DOM.swallowingRecordsContainer.insertAdjacentHTML('beforeend', createSwallowingFormHTML(getEmptySwallowingRecord(), DOM.swallowingRecordsContainer.children.length + 1));
+      });
+      DOM.swallowingRecordsContainer.addEventListener('click', e => {
+        const removeBtn = e.target.closest('.remove-swallowing-record-btn');
+        if (removeBtn) {
+            showConfirmation('刪除事件', '您確定要刪除這筆吞嚥事件嗎？此操作無法復原。', () => {
+                removeBtn.closest('.swallowing-record-form').remove();
+                DOM.swallowingRecordsContainer.querySelectorAll('h4').forEach((h, i) => h.textContent = `第 ${i + 1} 筆吞嚥事件`);
+            });
+        }
+      });
+
       DOM.sleepQualityRating.addEventListener('click', e => { if (e.target.classList.contains('star')) updateStars(e.target.dataset.value); });
       DOM.nightToiletVisits.addEventListener('click', e => {
         const button = e.target.closest('.option-button');
@@ -969,14 +1325,7 @@
       DOM.importCsvBtn.addEventListener('click', () => DOM.importFileInput.click());
       DOM.importFileInput.addEventListener('change', importData);
       DOM.deleteAllDataBtn.addEventListener('click', () => {
-          showConfirmation('刪除全部資料', '您確定要刪除所有日誌紀錄嗎？此操作將無法復原！', () => {
-              appState.dailyLogs = {};
-              appState.commonMeds = []; // Also clear common meds as they are part of user data
-              saveData();
-              renderHistoryList();
-              populateWeekFilter();
-              showToast('所有資料已成功刪除！', 'success');
-          });
+          showConfirmation('刪除全部雲端資料', '您確定要刪除所有雲端日誌紀錄嗎？此操作將無法復原！', deleteAllData);
       });
       DOM.themeToggle.addEventListener('click', toggleTheme);
       DOM.modalCancelBtn.addEventListener('click', () => DOM.confirmationModal.classList.add('hidden'));
@@ -1017,7 +1366,7 @@
       const titles = { 'log-page': '📝 健康日誌', 'stats-page': '📊 統計圖表', 'history-page': '📜 歷史紀錄' };
       DOM.headerTitle.textContent = titles[pageId] || '健康日誌';
       DOM.navItems.forEach(item => item.classList.toggle('active', item.dataset.page === pageId));
-      if (pageId === 'history-page') { populateWeekFilter(); renderHistoryList(); updateLastBackupInfo(); }
+      if (pageId === 'history-page') { populateWeekFilter(); renderHistoryList(); updateUserIdInfo(); }
       else if (pageId === 'stats-page') { appState.statsWeekOffset = 0; updateCharts(); }
       else if (pageId === 'log-page') { renderCommonMeds(); }
     }
@@ -1032,6 +1381,12 @@
       if (show && DOM.bowelRecordsContainer.children.length === 0) {
           renderBowelForms([]);
       }
+    }
+    function toggleSwallowingSection(show) {
+        DOM.swallowingDetailsSection.classList.toggle('hidden', !show);
+        if (show && DOM.swallowingRecordsContainer.children.length === 0) {
+            renderSwallowingForms([getEmptySwallowingRecord()]);
+        }
     }
     let toastTimer;
     function showToast(message, type = 'error') {
@@ -1081,23 +1436,9 @@
       if (document.querySelector('#night-toilet-visits .selected') === null) missing.push('夜間如廁次數');
       if (document.querySelectorAll('#rbd-symptoms input:checked').length === 0) missing.push('RBD 症狀');
       
-      const selectedBowelStatus = DOM.bowelStatusOptions.querySelector('.selected');
-      if (!selectedBowelStatus) {
-          missing.push('排便狀況');
-      } else if (selectedBowelStatus.dataset.value === 'yes') {
-        const bowelForms = document.querySelectorAll('.bowel-record-form');
-        if (bowelForms.length === 0) missing.push('至少一筆排便紀錄');
-        bowelForms.forEach((form, index) => {
-          const r = `第 ${index + 1} 筆排便`;
-          if (form.querySelectorAll('.bristol-item.bristol-selected').length === 0) missing.push(`${r}的類型`);
-          if (!form.querySelector('.bowel-time-of-day').value) missing.push(`${r}的時間`);
-          if (!form.querySelector('.color-item.bristol-selected')) missing.push(`${r}的顏色`);
-          if (!form.querySelector('.volume-options .selected')) missing.push(`${r}的排便量`);
-          if (!form.querySelector('.duration-options .selected')) missing.push(`${r}的排便耗時`);
-          if (form.querySelectorAll('.symptoms-options .selected').length === 0) missing.push(`${r}的症狀`);
-          if (form.querySelectorAll('.status-options .selected').length === 0) missing.push(`${r}的附加狀態`);
-        });
-      }
+      if (!DOM.bowelStatusOptions.querySelector('.selected')) missing.push('排便狀況');
+      if (!DOM.swallowingStatusOptions.querySelector('.selected')) missing.push('吞嚥狀況');
+
       if (missing.length > 0) { showToast(`請完成以下欄位：${missing.join('、')}`, 'error'); return false; }
       return true;
     }
@@ -1109,7 +1450,7 @@
     }
 
     function exportDataAsCsv() {
-        const headers = ['date', 'hadBowelMovement', 'bowelRecords', 'sleep', 'nightToiletVisits', 'rbdSymptoms', 'rbdOther', 'meds', 'dailyNotes'];
+        const headers = ['date', 'hadBowelMovement', 'bowelRecords', 'hadSwallowingEvent', 'swallowingRecords', 'sleep', 'nightToiletVisits', 'rbdSymptoms', 'rbdOther', 'meds', 'dailyNotes'];
         const csvRows = [headers.join(',')];
         const sortedDates = Object.keys(appState.dailyLogs).sort();
         for (const date of sortedDates) {
@@ -1119,6 +1460,8 @@
                 dayjs(date).format('YYYY/MM/DD'),
                 log.hadBowelMovement,
                 JSON.stringify(log.bowel || []),
+                log.hadSwallowingEvent,
+                JSON.stringify(log.swallowing || []),
                 log.sleep || 0,
                 exportedVisits,
                 JSON.stringify(log.rbd ? log.rbd.symptoms : []),
@@ -1147,119 +1490,115 @@
         const file = event.target.files[0]; if (!file) return;
         const reader = new FileReader();
         reader.onload = (e) => {
-            // New robust CSV parser function
             function parseCSV(csvString) {
-                const rows = [];
-                let currentRow = [];
-                let currentField = '';
-                let inQuotes = false;
-                // Normalize line endings
+                const rows = []; let currentRow = []; let currentField = ''; let inQuotes = false;
                 const cleanedString = csvString.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
                 for (let i = 0; i < cleanedString.length; i++) {
                     const char = cleanedString[i];
-
                     if (inQuotes) {
-                        if (char === '"') {
-                            // Check for escaped quote
-                            if (i + 1 < cleanedString.length && cleanedString[i + 1] === '"') {
-                                currentField += '"';
-                                i++; // Skip the second quote
-                            } else {
-                                inQuotes = false; // End of quoted field
-                            }
-                        } else {
-                            currentField += char;
-                        }
+                        if (char === '"' && (i + 1 === cleanedString.length || cleanedString[i + 1] !== '"')) { inQuotes = false; }
+                        else if (char === '"' && cleanedString[i + 1] === '"') { currentField += '"'; i++; }
+                        else { currentField += char; }
                     } else {
-                        if (char === '"') {
-                            inQuotes = true;
-                        } else if (char === ',') {
-                            currentRow.push(currentField);
-                            currentField = '';
-                        } else if (char === '\n') {
-                            currentRow.push(currentField);
-                            rows.push(currentRow);
-                            currentRow = [];
-                            currentField = '';
-                        } else {
-                            currentField += char;
-                        }
+                        if (char === '"') { inQuotes = true; }
+                        else if (char === ',') { currentRow.push(currentField); currentField = ''; }
+                        else if (char === '\n') { currentRow.push(currentField); rows.push(currentRow); currentRow = []; currentField = ''; }
+                        else { currentField += char; }
                     }
                 }
-                // Push the last field and row
-                if (currentField || currentRow.length > 0) {
-                    currentRow.push(currentField);
-                    rows.push(currentRow);
-                }
+                if (currentField || currentRow.length > 0) { currentRow.push(currentField); rows.push(currentRow); }
                 return rows.filter(row => row.length > 1 || (row.length === 1 && row[0] !== ''));
             }
 
             const rows = parseCSV(e.target.result);
-            
             if (rows.length < 2) { showToast('CSV 檔案為空或格式不正確。', 'error'); return; }
             
             const headers = rows.shift().map(cleanInvisible);
-            const requiredHeaders = ['date', 'bowelRecords', 'sleep'];
-            if (!requiredHeaders.every(h => headers.includes(h))) { showToast('CSV 檔案缺少必要的欄位。', 'error'); return; }
+            const requiredHeaders = ['date'];
+            if (!requiredHeaders.every(h => headers.includes(h))) { showToast('CSV 檔案缺少必要的 "date" 欄位。', 'error'); return; }
             
-            const isOldFormat = headers.includes('noBowel');
-
             const importedLogs = {}; let errorCount = 0;
-            rows.forEach((values, index) => { // Now `rows` is an array of arrays
+            rows.forEach((values, index) => {
                 try {
-                    if (values.length < headers.length) {
-                        // Skip potentially empty or malformed rows
-                        return;
-                    }
-                    const rowData = headers.reduce((obj, h, i) => ({...obj, [h]: values[i]}), {});
+                    const rowData = headers.reduce((obj, h, i) => ({...obj, [h]: values[i] || ''}), {});
+                    const dateString = rowData.date.trim();
+                    if (!dateString) throw new Error(`第 ${index + 2} 行日期為空。`);
                     
-                    const dateString = rowData.date ? rowData.date.trim() : '';
-                    if (!dateString) {
-                         throw new Error(`第 ${index + 2} 行日期為空。`);
-                    }
                     const parsedDate = dayjs(dateString, ['YYYY/MM/DD', 'YYYY-MM-DD', 'YYYY/M/D'], true);
-                    
-                    if (!parsedDate.isValid()) {
-                        throw new Error(`日期格式無效: "${dateString}"`);
-                    }
+                    if (!parsedDate.isValid()) throw new Error(`日期格式無效: "${dateString}"`);
                     const date = parsedDate.format('YYYY-MM-DD');
 
                     const visits = parseInt(rowData.nightToiletVisits, 10);
                     
-                    let hadBowelMovement;
-                    if (isOldFormat) {
-                        hadBowelMovement = rowData.noBowel === 'false';
-                    } else {
-                        hadBowelMovement = rowData.hadBowelMovement === 'true';
-                    }
-
                     importedLogs[date] = {
-                        hadBowelMovement: hadBowelMovement, 
+                        hadBowelMovement: rowData.hadBowelMovement === 'true', 
                         bowel: JSON.parse(rowData.bowelRecords || '[]'),
+                        hadSwallowingEvent: rowData.hadSwallowingEvent === 'true',
+                        swallowing: JSON.parse(rowData.swallowingRecords || '[]'),
                         sleep: parseInt(rowData.sleep, 10) || 0,
                         nightToiletVisits: isNaN(visits) ? -1 : visits,
-                        rbd: { symptoms: JSON.parse(rowData.rbdSymptoms || '[]'), other: rowData.rbdOther || '' },
+                        rbd: { 
+                            symptoms: JSON.parse(rowData.rbdSymptoms || '[]'), 
+                            other: rowData.rbdOther || '' 
+                        },
                         meds: rowData.meds || '', 
                         dailyNotes: rowData.dailyNotes || ''
                     };
                 } catch (err) { 
                     errorCount++; 
-                    console.error(`無法解析第 ${index + 2} 行:`, err); 
+                    console.error(`無法解析第 ${index + 2} 行:`, err, "Row data:", values); 
                 }
             });
-            if(errorCount > 0) showToast(`匯入完成，但有 ${errorCount} 行資料解析失敗。`, 'error');
-            showConfirmation('匯入資料', `成功解析 ${Object.keys(importedLogs).length} 筆紀錄。確定要匯入並覆蓋現有資料嗎？`, () => {
-                Object.assign(appState.dailyLogs, importedLogs);
-                saveData();
-                showToast('資料匯入成功！', 'success');
-                if (appState.currentPage === 'history-page') { populateWeekFilter(); renderHistoryList(); }
-                loadLogForDate(appState.currentDate);
+
+            if(errorCount > 0) showToast(`匯入完成，但有 ${errorCount} 行資料解析失敗。請檢查控制台。`, 'error');
+            
+            showConfirmation('匯入資料至雲端', `成功解析 ${Object.keys(importedLogs).length} 筆紀錄。確定要匯入並覆蓋雲端上的現有資料嗎？`, async () => {
+                if (!appState.isAuthReady || !userId) {
+                    showToast('無法匯入，使用者未登入', 'error');
+                    return;
+                }
+                const batch = writeBatch(db);
+                Object.entries(importedLogs).forEach(([date, logData]) => {
+                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'healthLogs', date);
+                    batch.set(docRef, logData);
+                });
+                try {
+                    await batch.commit();
+                    showToast('資料已成功匯入雲端！', 'success');
+                } catch (error) {
+                    console.error("Error importing data to Firestore:", error);
+                    showToast('匯入失敗，請稍後再試', 'error');
+                }
             });
         };
         reader.onerror = () => showToast('無法讀取檔案。', 'error');
         reader.readAsText(file);
         event.target.value = '';
+    }
+
+    async function deleteAllData() {
+        if (!appState.isAuthReady || !userId) {
+            showToast('無法刪除，使用者未登入', 'error');
+            return;
+        }
+
+        const logsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'healthLogs');
+        const settingsDocRef = doc(db, 'artifacts', appId, 'users', userId, 'settings', 'userSettings');
+        
+        try {
+            const querySnapshot = await getDocs(logsCollectionRef);
+            const batch = writeBatch(db);
+            querySnapshot.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            // Also delete the settings document
+            batch.delete(settingsDocRef);
+            await batch.commit();
+            showToast('所有雲端資料已成功刪除！', 'success');
+        } catch (error) {
+            console.error("Error deleting all data:", error);
+            showToast('刪除失敗，請稍後再試', 'error');
+        }
     }
     
     // Medication Management Functions
@@ -1278,22 +1617,38 @@
         `).join('');
     }
 
-    function addCommonMed() {
+    async function addCommonMed() {
         const medName = DOM.newMedInput.value.trim();
         if (medName && !appState.commonMeds.includes(medName)) {
-            appState.commonMeds.push(medName);
-            saveData();
-            renderMedsList();
-            renderCommonMeds();
-            DOM.newMedInput.value = '';
+            const settingsDocRef = doc(db, 'artifacts', appId, 'users', userId, 'settings', 'userSettings');
+            try {
+                await updateDoc(settingsDocRef, {
+                    commonMeds: arrayUnion(medName)
+                });
+                DOM.newMedInput.value = '';
+            } catch (error) {
+                // If the doc doesn't exist, create it
+                if (error.code === 'not-found') {
+                    await setDoc(settingsDocRef, { commonMeds: [medName] });
+                    DOM.newMedInput.value = '';
+                } else {
+                    console.error("Error adding common med:", error);
+                    showToast('新增藥物失敗', 'error');
+                }
+            }
         }
     }
 
-    function deleteCommonMed(medName) {
-        appState.commonMeds = appState.commonMeds.filter(med => med !== medName);
-        saveData();
-        renderMedsList();
-        renderCommonMeds();
+    async function deleteCommonMed(medName) {
+        const settingsDocRef = doc(db, 'artifacts', appId, 'users', userId, 'settings', 'userSettings');
+        try {
+            await updateDoc(settingsDocRef, {
+                commonMeds: arrayRemove(medName)
+            });
+        } catch (error) {
+            console.error("Error deleting common med:", error);
+            showToast('刪除藥物失敗', 'error');
+        }
     }
     
     function renderCommonMeds() {
@@ -1329,7 +1684,7 @@
     }
 
     init();
-  });
+    });
   </script>
 </body>
 </html>
