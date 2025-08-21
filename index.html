@@ -124,29 +124,10 @@
     .empty-state svg {
         margin: 0 auto 12px;
     }
-    #loading-overlay {
-        position: absolute;
-        inset: 0;
-        background-color: rgba(255, 255, 255, 0.8);
-        z-index: 100;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        gap: 1rem;
-        transition: opacity 0.3s;
-    }
-    html.dark #loading-overlay {
-        background-color: rgba(15, 23, 42, 0.8);
-    }
   </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-950 transition-colors duration-300">
   <div id="app" class="max-w-lg mx-auto bg-slate-50 dark:bg-slate-900 min-h-screen shadow-lg relative transition-colors duration-300 overflow-x-hidden">
-    <div id="loading-overlay">
-        <svg class="spinner w-12 h-12 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-        <p class="text-slate-700 dark:text-slate-300 font-semibold">正在載入資料...</p>
-    </div>
     <header id="app-header" class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm sticky top-0 z-10 shadow-sm transition-colors duration-300">
       <div id="app-header-top" class="text-slate-800 dark:text-slate-200 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
         <div class="w-10 h-10"></div> <!-- Placeholder for alignment -->
@@ -198,7 +179,7 @@
             </div>
           </section>
 
-          <!-- UPDATED: Swallowing Record Section -->
+          <!-- Swallowing Record Section -->
           <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm space-y-4 text-slate-800 dark:text-slate-200">
             <h2 class="text-lg font-semibold">🍲 吞嚥紀錄</h2>
             <div id="swallowing-status-options" class="option-button-group flex gap-2">
@@ -271,7 +252,7 @@
       <div id="history-page" class="page">
         <section class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm text-slate-800 dark:text-slate-200">
           <h2 class="text-lg font-semibold mb-4">🗂️ 資料管理</h2>
-          <p id="user-id-info" class="text-xs text-center text-slate-500 dark:text-slate-400 mb-4"></p>
+          <p id="last-backup-info" class="text-xs text-center text-slate-500 dark:text-slate-400 mb-4"></p>
           <div class="space-y-2 mb-4">
             <div class="grid grid-cols-2 gap-2">
                 <button id="import-csv-btn" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center">
@@ -284,12 +265,12 @@
                 </button>
             </div>
              <button id="manage-meds-btn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center mt-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
-              管理常用藥物
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
+               管理常用藥物
             </button>
             <button id="delete-all-data-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center mt-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
-                刪除雲端全部資料
+                刪除全部本機資料
             </button>
           </div>
           <input type="file" id="import-file-input" class="hidden" accept=".csv, text/csv"/>
@@ -343,24 +324,12 @@
 
   </div>
 
-  <script type="module">
-    // Firebase SDK imports
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, writeBatch, getDocs, arrayUnion, arrayRemove, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    document.addEventListener('DOMContentLoaded', () => {
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
     dayjs.extend(dayjs_plugin_relativeTime);
     dayjs.extend(dayjs_plugin_customParseFormat);
     dayjs.extend(dayjs_plugin_weekOfYear);
     dayjs.locale('zh-tw');
-
-    // --- Firebase Variables ---
-    let db, auth;
-    let userId;
-    let healthLogsUnsubscribe = null;
-    let settingsUnsubscribe = null;
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
     function cleanInvisible(str) {
       if (str === null || str === undefined) return '';
@@ -400,7 +369,7 @@
       { id: 'sleep-talking', label: '激動夢話' }, { id: 'self-injury', label: '使自己受傷' },
       { id: 'partner-injury', label: '使伴侶受傷' }, { id: 'other', label: '其他' }
     ];
-    // NEW: Swallowing Record Data
+    // Swallowing Record Data
     const swallowingContexts = ['單獨', '與人聊天', '走動中', '看螢幕'];
     const swallowingPostures = ['坐直≥90°', '半躺', '走動'];
     const swallowingDrinkTypes = ['清水', '茶', '湯（稀）', '濃稠飲（增稠後）'];
@@ -414,20 +383,18 @@
     const swallowingActions = ['暫停進食', '少量分次喝水', '調姿（坐直/下巴微收）', '背部拍擊', '腹部擠壓（僅完全阻塞時）', '停止當次用餐'];
     const swallowingResults = ['自行恢復', '仍不適→就醫', '當天後續症狀（發燒、喘、持續咳嗽）'];
 
-
     let appState = {
       dailyLogs: {},
       commonMeds: [],
+      lastBackupDate: null,
       currentDate: dayjs().format('YYYY-MM-DD'),
       currentPage: 'log-page',
       charts: { bowel: null, rbd: null, bowelTime: null, sleep: null, nightToilet: null, swallowing: null },
       statsWeekOffset: 0,
-      isAuthReady: false,
     };
 
     const DOM = {
       html: document.documentElement,
-      loadingOverlay: document.getElementById('loading-overlay'),
       headerTitle: document.getElementById('header-title'),
       pages: document.querySelectorAll('.page'),
       navItems: document.querySelectorAll('.nav-item'),
@@ -437,7 +404,7 @@
       bowelRecordsSection: document.getElementById('bowel-records-section'),
       bowelRecordsContainer: document.getElementById('bowel-records-container'),
       addBowelRecordBtn: document.getElementById('add-bowel-record-btn'),
-      // UPDATED: Swallowing DOM elements
+      // Swallowing DOM elements
       swallowingStatusOptions: document.getElementById('swallowing-status-options'),
       swallowingDetailsSection: document.getElementById('swallowing-details-section'),
       swallowingRecordsContainer: document.getElementById('swallowing-records-container'),
@@ -456,7 +423,7 @@
       statsContent: document.getElementById('stats-content'),
       historyList: document.getElementById('history-list'),
       weekFilter: document.getElementById('week-filter'),
-      userIdInfo: document.getElementById('user-id-info'),
+      lastBackupInfo: document.getElementById('last-backup-info'),
       statsWeekTitle: document.getElementById('stats-week-title'),
       prevWeekBtn: document.getElementById('prev-week-btn'),
       nextWeekBtn: document.getElementById('next-week-btn'),
@@ -489,63 +456,14 @@
     function init() {
       setupPWA();
       setupTheme();
-      initFirebase(); // New Firebase initialization
+      loadData();
       renderStaticComponents();
       setupEventListeners();
       setupGestureListeners(); 
       DOM.logDate.value = dayjs(appState.currentDate).format('YYYY-MM-DD');
+      loadLogForDate(appState.currentDate);
       navigateTo('log-page');
     }
-
-    // --- FIX START: Robust Firebase Initialization ---
-    async function initFirebase() {
-        try {
-            // 1. Check if the global config variable exists and is not empty.
-            if (typeof __firebase_config === 'undefined' || !__firebase_config) {
-                throw new Error("Firebase configuration (`__firebase_config`) is missing.");
-            }
-            
-            const firebaseConfig = JSON.parse(__firebase_config);
-
-            // 2. A basic check to see if the config object has essential keys.
-            if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-                 throw new Error("Firebase configuration is invalid or incomplete. Missing apiKey or projectId.");
-            }
-
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            setLogLevel('debug');
-
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    userId = user.uid;
-                    console.log("User is signed in with UID:", userId);
-                    appState.isAuthReady = true;
-                    loadData(); // Load data once authenticated
-                } else {
-                    console.log("No user signed in, attempting to sign in...");
-                    try {
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                    } catch (error) {
-                        console.error("Firebase sign-in failed:", error);
-                        showToast('無法連接到雲端服務', 'error');
-                        DOM.loadingOverlay.style.display = 'none';
-                    }
-                }
-            });
-        } catch (error) {
-            console.error("Firebase initialization failed:", error);
-            // Provide a more user-friendly message that hints at a configuration issue.
-            showToast('應用程式初始化失敗，請確認設定。', 'error');
-            DOM.loadingOverlay.style.display = 'none';
-        }
-    }
-    // --- FIX END ---
 
     function setupPWA() {
         const manifest = {
@@ -564,60 +482,34 @@
         }
     }
 
+    // --- Data Persistence (LocalStorage) ---
     function loadData() {
-        if (!appState.isAuthReady || !userId) {
-            console.log("Auth not ready, skipping data load.");
-            return;
+      try {
+        const dataStr = localStorage.getItem('healthLogApp');
+        if (dataStr) {
+            const data = JSON.parse(dataStr);
+            appState.dailyLogs = data.logs || {};
+            appState.lastBackupDate = data.lastUpdated;
+            appState.commonMeds = data.commonMeds || [];
         }
-
-        // Unsubscribe from previous listeners if they exist
-        if (healthLogsUnsubscribe) healthLogsUnsubscribe();
-        if (settingsUnsubscribe) settingsUnsubscribe();
-
-        // --- Listener for Health Logs ---
-        const logsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'healthLogs');
-        healthLogsUnsubscribe = onSnapshot(query(logsCollectionRef), (snapshot) => {
-            console.log("Received health logs snapshot.");
-            const newLogs = {};
-            snapshot.forEach(doc => {
-                newLogs[doc.id] = doc.data();
-            });
-            appState.dailyLogs = newLogs;
-
-            // Update UI based on new data
-            loadLogForDate(appState.currentDate);
-            if (appState.currentPage === 'history-page') {
-                populateWeekFilter();
-                renderHistoryList(DOM.weekFilter.value);
-            }
-            if (appState.currentPage === 'stats-page') {
-                updateCharts();
-            }
-
-            DOM.loadingOverlay.style.opacity = '0';
-            setTimeout(() => DOM.loadingOverlay.style.display = 'none', 300);
-
-        }, (error) => {
-            console.error("Error fetching health logs:", error);
-            showToast('讀取日誌資料失敗', 'error');
-        });
-
-        // --- Listener for Settings (Common Meds) ---
-        const settingsDocRef = doc(db, 'artifacts', appId, 'users', userId, 'settings', 'userSettings');
-        settingsUnsubscribe = onSnapshot(settingsDocRef, (doc) => {
-            console.log("Received settings snapshot.");
-            if (doc.exists()) {
-                appState.commonMeds = doc.data().commonMeds || [];
-            } else {
-                appState.commonMeds = [];
-            }
-            renderCommonMeds();
-        }, (error) => {
-            console.error("Error fetching settings:", error);
-            showToast('讀取設定資料失敗', 'error');
-        });
+      } catch (error) { 
+          console.error("無法讀取 localStorage 資料:", error); 
+          appState.dailyLogs = {}; 
+          appState.commonMeds = []; 
+      }
     }
     
+    function saveData() {
+        const dataToSave = {
+            logs: appState.dailyLogs,
+            commonMeds: appState.commonMeds,
+            lastUpdated: new Date().toISOString()
+        };
+        localStorage.setItem('healthLogApp', JSON.stringify(dataToSave));
+        appState.lastBackupDate = dataToSave.lastUpdated;
+        updateLastBackupInfo();
+    }
+
     function getEmptyLog() {
       return { hadBowelMovement: false, bowel: [], hadSwallowingEvent: false, swallowing: [], sleep: 0, nightToiletVisits: -1, rbd: { symptoms: [], other: '' }, meds: '', dailyNotes: '' };
     }
@@ -627,20 +519,9 @@
     function getEmptySwallowingRecord() {
         return {
             id: Date.now(),
-            time: '',
-            context: '',
-            posture: '',
-            drinkType: '',
-            solidType: '',
-            medType: '',
-            portion: '',
-            speed: '',
-            distraction: '',
-            symptoms: [],
-            severity: '',
-            action: '',
-            result: '',
-            notes: ''
+            time: '', context: '', posture: '', drinkType: '', solidType: '',
+            medType: '', portion: '', speed: '', distraction: '', symptoms: [],
+            severity: '', action: '', result: '', notes: ''
         };
     }
 
@@ -678,15 +559,11 @@
 
     async function saveLogForDate(date) {
         if (!validateLogForm()) return;
-        if (!appState.isAuthReady || !userId) {
-            showToast('無法儲存，使用者未登入', 'error');
-            return;
-        }
-
         triggerHapticFeedback();
         const originalContent = DOM.saveLogButtonContent.innerHTML;
         DOM.saveLogButton.disabled = true;
         DOM.saveLogButtonContent.innerHTML = `<svg class="spinner w-6 h-6 mr-2 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>儲存中...`;
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         // --- Gather Bowel Data ---
         const hadBowelMovement = DOM.bowelStatusOptions.querySelector('.selected')?.dataset.value === 'yes';
@@ -734,7 +611,7 @@
             });
         }
 
-        const logData = {
+        appState.dailyLogs[date] = {
             hadBowelMovement,
             bowel: bowelRecords,
             hadSwallowingEvent,
@@ -749,21 +626,13 @@
             dailyNotes: DOM.dailyNotes.value
         };
 
-        try {
-            const logDocRef = doc(db, 'artifacts', appId, 'users', userId, 'healthLogs', date);
-            await setDoc(logDocRef, logData, { merge: true });
-            DOM.saveLogButtonContent.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="mr-2 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>儲存成功！`;
-            setTimeout(() => {
-                DOM.saveLogButton.disabled = false;
-                DOM.saveLogButtonContent.innerHTML = originalContent;
-                showToast('本日日誌已同步至雲端！', 'success');
-            }, 1200);
-        } catch (error) {
-            console.error("Error saving log to Firestore:", error);
-            showToast('儲存失敗，請稍後再試', 'error');
+        saveData();
+        DOM.saveLogButtonContent.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="mr-2 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>儲存成功！`;
+        setTimeout(() => {
             DOM.saveLogButton.disabled = false;
             DOM.saveLogButtonContent.innerHTML = originalContent;
-        }
+            showToast('本日日誌已儲存！', 'success');
+        }, 1200);
     }
 
     function renderStaticComponents() {
@@ -885,7 +754,6 @@
         </div>`;
     }
 
-
     function createOptionGroup(label, className, options, selectedValues, isMultiSelect, isColorGrid = false) {
         const groupClass = isMultiSelect ? `option-button-group ${className} multi-select-group flex flex-wrap gap-2` : `option-button-group ${className} flex flex-wrap gap-2`;
         let buttons;
@@ -917,7 +785,7 @@
         : sortedDates.filter(date => {
             const [year, week] = filterWeek.split('-');
             return dayjs(date).year() == year && dayjs(date).week() == week;
-          });
+        });
 
       if (filteredDates.length === 0) {
         DOM.historyList.innerHTML = `<div class="empty-state">
@@ -943,7 +811,7 @@
                         <div class="flex items-center text-xs gap-2">${s.time ? `<b>${s.time}</b>` : ''}${severityBadge}</div>
                         <div class="text-slate-500 dark:text-slate-400 text-[11px]">${[s.context, s.solidType, s.drinkType].filter(Boolean).join(', ')}</div>
                     </li>`;
-                  }).join('')}</ul>`
+                    }).join('')}</ul>`
                 : '<span class="text-slate-500 dark:text-slate-400 ml-5">有嗆到，但未記錄</span>');
 
         return `<div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -975,11 +843,11 @@
       }).join('');
     }
 
-    function updateUserIdInfo() {
-        if (userId) {
-            DOM.userIdInfo.textContent = `使用者 ID: ${userId}`;
+    function updateLastBackupInfo() {
+        if (appState.lastBackupDate) {
+            DOM.lastBackupInfo.textContent = `最後儲存於：${dayjs(appState.lastBackupDate).format('YYYY/MM/DD HH:mm:ss')}`;
         } else {
-            DOM.userIdInfo.textContent = '使用者未登入';
+            DOM.lastBackupInfo.textContent = '尚未有任何儲存紀錄。';
         }
     }
 
@@ -1325,7 +1193,14 @@
       DOM.importCsvBtn.addEventListener('click', () => DOM.importFileInput.click());
       DOM.importFileInput.addEventListener('change', importData);
       DOM.deleteAllDataBtn.addEventListener('click', () => {
-          showConfirmation('刪除全部雲端資料', '您確定要刪除所有雲端日誌紀錄嗎？此操作將無法復原！', deleteAllData);
+          showConfirmation('刪除全部資料', '您確定要刪除所有日誌紀錄嗎？此操作將無法復原！', () => {
+              appState.dailyLogs = {};
+              appState.commonMeds = [];
+              saveData();
+              renderHistoryList();
+              populateWeekFilter();
+              showToast('所有資料已成功刪除！', 'success');
+          });
       });
       DOM.themeToggle.addEventListener('click', toggleTheme);
       DOM.modalCancelBtn.addEventListener('click', () => DOM.confirmationModal.classList.add('hidden'));
@@ -1366,7 +1241,7 @@
       const titles = { 'log-page': '📝 健康日誌', 'stats-page': '📊 統計圖表', 'history-page': '📜 歷史紀錄' };
       DOM.headerTitle.textContent = titles[pageId] || '健康日誌';
       DOM.navItems.forEach(item => item.classList.toggle('active', item.dataset.page === pageId));
-      if (pageId === 'history-page') { populateWeekFilter(); renderHistoryList(); updateUserIdInfo(); }
+      if (pageId === 'history-page') { populateWeekFilter(); renderHistoryList(); updateLastBackupInfo(); }
       else if (pageId === 'stats-page') { appState.statsWeekOffset = 0; updateCharts(); }
       else if (pageId === 'log-page') { renderCommonMeds(); }
     }
@@ -1552,53 +1427,17 @@
 
             if(errorCount > 0) showToast(`匯入完成，但有 ${errorCount} 行資料解析失敗。請檢查控制台。`, 'error');
             
-            showConfirmation('匯入資料至雲端', `成功解析 ${Object.keys(importedLogs).length} 筆紀錄。確定要匯入並覆蓋雲端上的現有資料嗎？`, async () => {
-                if (!appState.isAuthReady || !userId) {
-                    showToast('無法匯入，使用者未登入', 'error');
-                    return;
-                }
-                const batch = writeBatch(db);
-                Object.entries(importedLogs).forEach(([date, logData]) => {
-                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'healthLogs', date);
-                    batch.set(docRef, logData);
-                });
-                try {
-                    await batch.commit();
-                    showToast('資料已成功匯入雲端！', 'success');
-                } catch (error) {
-                    console.error("Error importing data to Firestore:", error);
-                    showToast('匯入失敗，請稍後再試', 'error');
-                }
+            showConfirmation('匯入資料', `成功解析 ${Object.keys(importedLogs).length} 筆紀錄。確定要匯入並覆蓋現有資料嗎？`, () => {
+                Object.assign(appState.dailyLogs, importedLogs);
+                saveData();
+                showToast('資料匯入成功！', 'success');
+                if (appState.currentPage === 'history-page') { populateWeekFilter(); renderHistoryList(); }
+                loadLogForDate(appState.currentDate);
             });
         };
         reader.onerror = () => showToast('無法讀取檔案。', 'error');
         reader.readAsText(file);
         event.target.value = '';
-    }
-
-    async function deleteAllData() {
-        if (!appState.isAuthReady || !userId) {
-            showToast('無法刪除，使用者未登入', 'error');
-            return;
-        }
-
-        const logsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'healthLogs');
-        const settingsDocRef = doc(db, 'artifacts', appId, 'users', userId, 'settings', 'userSettings');
-        
-        try {
-            const querySnapshot = await getDocs(logsCollectionRef);
-            const batch = writeBatch(db);
-            querySnapshot.forEach(doc => {
-                batch.delete(doc.ref);
-            });
-            // Also delete the settings document
-            batch.delete(settingsDocRef);
-            await batch.commit();
-            showToast('所有雲端資料已成功刪除！', 'success');
-        } catch (error) {
-            console.error("Error deleting all data:", error);
-            showToast('刪除失敗，請稍後再試', 'error');
-        }
     }
     
     // Medication Management Functions
@@ -1617,38 +1456,22 @@
         `).join('');
     }
 
-    async function addCommonMed() {
+    function addCommonMed() {
         const medName = DOM.newMedInput.value.trim();
         if (medName && !appState.commonMeds.includes(medName)) {
-            const settingsDocRef = doc(db, 'artifacts', appId, 'users', userId, 'settings', 'userSettings');
-            try {
-                await updateDoc(settingsDocRef, {
-                    commonMeds: arrayUnion(medName)
-                });
-                DOM.newMedInput.value = '';
-            } catch (error) {
-                // If the doc doesn't exist, create it
-                if (error.code === 'not-found') {
-                    await setDoc(settingsDocRef, { commonMeds: [medName] });
-                    DOM.newMedInput.value = '';
-                } else {
-                    console.error("Error adding common med:", error);
-                    showToast('新增藥物失敗', 'error');
-                }
-            }
+            appState.commonMeds.push(medName);
+            saveData();
+            renderMedsList();
+            renderCommonMeds();
+            DOM.newMedInput.value = '';
         }
     }
 
-    async function deleteCommonMed(medName) {
-        const settingsDocRef = doc(db, 'artifacts', appId, 'users', userId, 'settings', 'userSettings');
-        try {
-            await updateDoc(settingsDocRef, {
-                commonMeds: arrayRemove(medName)
-            });
-        } catch (error) {
-            console.error("Error deleting common med:", error);
-            showToast('刪除藥物失敗', 'error');
-        }
+    function deleteCommonMed(medName) {
+        appState.commonMeds = appState.commonMeds.filter(med => med !== medName);
+        saveData();
+        renderMedsList();
+        renderCommonMeds();
     }
     
     function renderCommonMeds() {
@@ -1684,7 +1507,7 @@
     }
 
     init();
-    });
+  });
   </script>
 </body>
 </html>
