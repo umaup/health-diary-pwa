@@ -952,33 +952,27 @@
 
     function generateHealthInsights(weekData) {
         if (!DOM.aiInsightText) return;
-        
-        const daysInPeriod = 7;
 
         const totalBowelMovements = weekData.bowelCount.reduce((a, b) => a + b, 0);
-        const avgBowelMovements = (totalBowelMovements / daysInPeriod).toFixed(1);
-
         const totalSwallowingEvents = weekData.swallowingCount.reduce((a, b) => a + b, 0);
-        const avgSwallowingEvents = (totalSwallowingEvents / daysInPeriod).toFixed(1);
 
         const validSleep = weekData.sleep.filter(s => s > 0);
-        const avgSleepText = validSleep.length > 0 
+        const avgSleepText = validSleep.length > 0
             ? `平均 ${ (validSleep.reduce((a, b) => a + b, 0) / validSleep.length).toFixed(1) } 顆星`
             : '無紀錄';
 
         const totalNightToilet = weekData.nightToilet.filter(n => n !== null).reduce((a, b) => a + b, 0);
-        const avgNightToilet = (totalNightToilet / daysInPeriod).toFixed(1);
-
         const totalRbd = weekData.rbd.reduce((a, b) => a + b, 0);
-        const avgRbd = (totalRbd / daysInPeriod).toFixed(1);
+        
+        const weekLabel = appState.statsWeekOffset === 0 ? '本週' : '該週';
 
         DOM.aiInsightText.innerHTML = `
             <ul class="list-disc list-inside space-y-1">
-                <li>💩 <b>排便紀錄：</b>共 ${totalBowelMovements} 次 (平均每日 ${avgBowelMovements} 次)</li>
-                <li>🍲 <b>嗆到事件：</b>共 ${totalSwallowingEvents} 次 (平均每日 ${avgSwallowingEvents} 次)</li>
+                <li>💩 <b>排便紀錄：</b>${weekLabel}共 ${totalBowelMovements} 次</li>
+                <li>🍲 <b>嗆到事件：</b>${weekLabel}共 ${totalSwallowingEvents} 次</li>
                 <li>😴 <b>睡眠品質：</b>${avgSleepText}</li>
-                <li>🚽 <b>起床如廁：</b>共 ${totalNightToilet} 次 (平均每晚 ${avgNightToilet} 次)</li>
-                <li>🏃‍♂️ <b>RBD 症狀：</b>共 ${totalRbd} 次 (平均每晚 ${avgRbd} 次)</li>
+                <li>🚽 <b>起床如廁：</b>${weekLabel}共 ${totalNightToilet} 次</li>
+                <li>🏃‍♂️ <b>RBD 症狀：</b>${weekLabel}共 ${totalRbd} 次</li>
             </ul>
         `;
     }
@@ -1228,7 +1222,7 @@
         DOM.statsPage.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
         DOM.statsPage.addEventListener('touchend', e => { touchEndX = e.changedTouches[0].screenX; handleSwipe(); }, { passive: true });
         function handleSwipe() {
-            const swipeDistance = touchEndX - touchStartX;
+            const swipeDistance = touchEndX - startX;
             if (Math.abs(swipeDistance) < swipeThreshold) return; 
             if (swipeDistance > 0) { DOM.prevWeekBtn.click(); } 
             else { if (!DOM.nextWeekBtn.disabled) { DOM.nextWeekBtn.click(); } }
